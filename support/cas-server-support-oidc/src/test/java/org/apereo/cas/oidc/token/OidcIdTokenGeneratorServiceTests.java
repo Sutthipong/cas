@@ -22,8 +22,8 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.util.Pac4jConstants;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.TestPropertySource;
@@ -61,11 +61,13 @@ public class OidcIdTokenGeneratorServiceTests extends AbstractOidcTests {
         profile.setClientName("OIDC");
         profile.setId("casuser");
 
-        request.setAttribute(Pac4jConstants.USER_PROFILES, profile);
+        request.setAttribute(Pac4jConstants.USER_PROFILES,
+            CollectionUtils.wrapLinkedHashMap(profile.getClientName(), profile));
 
         val response = new MockHttpServletResponse();
 
         val tgt = mock(TicketGrantingTicket.class);
+        when(tgt.getId()).thenReturn(TGT_ID);
         val callback = casProperties.getServer().getPrefix()
             + OAuth20Constants.BASE_OAUTH20_URL + '/'
             + OAuth20Constants.CALLBACK_AUTHORIZE_URL_DEFINITION;
@@ -110,11 +112,13 @@ public class OidcIdTokenGeneratorServiceTests extends AbstractOidcTests {
         val profile = new CommonProfile();
         profile.setClientName("OIDC");
         profile.setId("casuser");
-        request.setAttribute(Pac4jConstants.USER_PROFILES, profile);
+        request.setAttribute(Pac4jConstants.USER_PROFILES,
+            CollectionUtils.wrapLinkedHashMap(profile.getClientName(), profile));
 
         val response = new MockHttpServletResponse();
 
         val tgt = mock(TicketGrantingTicket.class);
+        when(tgt.getId()).thenReturn(TGT_ID);
 
         when(tgt.getServices()).thenReturn(new HashMap<>());
         val authentication = CoreAuthenticationTestUtils.getAuthentication("casuser",
@@ -150,7 +154,8 @@ public class OidcIdTokenGeneratorServiceTests extends AbstractOidcTests {
         val profile = new CommonProfile();
         profile.setClientName("OIDC");
         profile.setId("casuser");
-        request.setAttribute(Pac4jConstants.USER_PROFILES, profile);
+        request.setAttribute(Pac4jConstants.USER_PROFILES,
+            CollectionUtils.wrapLinkedHashMap(profile.getClientName(), profile));
 
         val response = new MockHttpServletResponse();
 

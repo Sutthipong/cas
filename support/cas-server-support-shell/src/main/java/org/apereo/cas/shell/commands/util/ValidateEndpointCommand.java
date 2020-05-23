@@ -168,6 +168,7 @@ public class ValidateEndpointCommand {
     }
 
     @SneakyThrows
+    @SuppressWarnings("java:S4830")
     private static SSLContext getTheAllTrustingSSLContext() {
         val sslContext = SSLContext.getInstance("TLS");
         sslContext.init(null, new TrustManager[]{new X509TrustManager() {
@@ -195,9 +196,10 @@ public class ValidateEndpointCommand {
      * @param url     the url
      * @param proxy   the proxy
      * @param timeout the timeout
+     * @return true/false
      */
     @ShellMethod(key = "validate-endpoint", value = "Test connections to an endpoint to verify connectivity, SSL, etc")
-    public void validateEndpoint(
+    public boolean validateEndpoint(
         @ShellOption(value = {"url", "--url"},
             help = "Endpoint URL to test") final String url,
         @ShellOption(value = {"proxy", "--proxy"},
@@ -223,6 +225,7 @@ public class ValidateEndpointCommand {
                     LOGGER.info("Response status code received: [{}]", code);
                 }
                 LOGGER.info("Successfully connected to url [{}]", url);
+                return true;
             }
         } catch (final Exception e) {
             LOGGER.info("Could not connect to the host address [{}]", url);
@@ -231,6 +234,7 @@ public class ValidateEndpointCommand {
             LOGGER.error(consolidateExceptionMessages(e));
             testBadTlsConnection(url, proxy);
         }
+        return false;
     }
 }
 

@@ -39,7 +39,7 @@ public class X509RestMultipartBodyCredentialFactory implements RestHttpRequestCr
     @Override
     public List<Credential> fromRequest(final HttpServletRequest request, final MultiValueMap<String, String> requestBody) {
         if (requestBody == null || requestBody.isEmpty()) {
-            LOGGER.debug("Skipping [{}] because the requestBody is null or empty", getClass().getSimpleName());
+            LOGGER.trace("Skipping [{}] because the request body is null or empty", getClass().getSimpleName());
             return new ArrayList<>(0);
         }
         val cert = requestBody.getFirst(CERTIFICATE);
@@ -54,7 +54,11 @@ public class X509RestMultipartBodyCredentialFactory implements RestHttpRequestCr
             credential.setCertificate(certificate);
             return CollectionUtils.wrap(credential);
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(e.getMessage(), e);
+            } else {
+                LOGGER.error(e.getMessage());
+            }
         }
         return new ArrayList<>(0);
     }

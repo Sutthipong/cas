@@ -29,6 +29,27 @@ import static org.mockito.Mockito.*;
 @Tag("SAML")
 public class SamlResponseAuditResourceResolverTests {
     @Test
+    public void verifyActionUnknown() {
+        val r = new SamlResponseAuditResourceResolver();
+        val result = r.resolveFrom(mock(JoinPoint.class), new Object());
+        assertNotNull(result);
+        assertTrue(result.length == 0);
+    }
+
+    @Test
+    public void verifyActionEmptyEnvelope() {
+        val r = new SamlResponseAuditResourceResolver();
+        val envelope = mock(Envelope.class);
+        val body = mock(Body.class);
+
+        when(body.getUnknownXMLObjects()).thenReturn(CollectionUtils.wrapList());
+        when(envelope.getBody()).thenReturn(body);
+        val result = r.resolveFrom(mock(JoinPoint.class), envelope);
+        assertNotNull(result);
+        assertTrue(result.length == 0);
+    }
+
+    @Test
     public void verifyAction() {
         val r = new SamlResponseAuditResourceResolver();
         val response = mock(Response.class);
@@ -52,7 +73,7 @@ public class SamlResponseAuditResourceResolverTests {
 
         val fault = mock(Fault.class);
         val actor = mock(FaultActor.class);
-        when(actor.getValue()).thenReturn("actor");
+        when(actor.getURI()).thenReturn("actor");
         val msg = mock(FaultString.class);
         when(msg.getValue()).thenReturn("message");
         when(fault.getMessage()).thenReturn(msg);

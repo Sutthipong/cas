@@ -14,6 +14,7 @@ import org.opensaml.saml.metadata.resolver.MetadataResolver;
 import org.opensaml.saml.saml2.metadata.SPSSODescriptor;
 
 import javax.annotation.Nonnull;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,12 +40,12 @@ public class SamlRegisteredServiceMetadataExpirationPolicy implements Expiry<Sam
         if (duration >= 0) {
             return duration;
         }
-        LOGGER.debug("Metadata for [{}] does not define caching policies", service.getName());
+        LOGGER.trace("Metadata for [{}] does not define caching policies", service.getName());
         if (StringUtils.isNotBlank(service.getMetadataExpirationDuration())) {
             LOGGER.debug("Service [{}] defines a cache expiration duration of [{}]", service.getName(), service.getMetadataExpirationDuration());
             return Beans.newDuration(service.getMetadataExpirationDuration()).toNanos();
         }
-        LOGGER.debug("Service [{}] does not define caching policies. Falling back onto default...", service.getName());
+        LOGGER.trace("Service [{}] does not define caching policies. Falling back onto default...", service.getName());
         return defaultExpiration;
     }
 
@@ -74,13 +75,17 @@ public class SamlRegisteredServiceMetadataExpirationPolicy implements Expiry<Sam
      */
     protected long getCacheDurationForServiceProvider(final SamlRegisteredService service, final MetadataResolver chainingMetadataResolver) {
         try {
+            if (StringUtils.isBlank(service.getServiceId())) {
+                LOGGER.error("Unable to determine duration for SAML service [{}] with no entity id", service);
+                return -1;
+            }
             val set = new CriteriaSet();
             set.add(new EntityIdCriterion(service.getServiceId()));
             set.add(new EntityRoleCriterion(SPSSODescriptor.DEFAULT_ELEMENT_NAME));
             val entitySp = chainingMetadataResolver.resolveSingle(set);
             if (entitySp != null && entitySp.getCacheDuration() != null) {
                 LOGGER.debug("Located cache duration [{}] specified in SP metadata for [{}]", entitySp.getCacheDuration(), entitySp.getEntityID());
-                return TimeUnit.MILLISECONDS.toNanos(entitySp.getCacheDuration());
+                return TimeUnit.MILLISECONDS.toNanos(entitySp.getCacheDuration().toMillis());
             }
 
             set.clear();
@@ -88,7 +93,7 @@ public class SamlRegisteredServiceMetadataExpirationPolicy implements Expiry<Sam
             val entity = chainingMetadataResolver.resolveSingle(set);
             if (entity != null && entity.getCacheDuration() != null) {
                 LOGGER.debug("Located cache duration [{}] specified in entity metadata for [{}]", entity.getCacheDuration(), entity.getEntityID());
-                return TimeUnit.MILLISECONDS.toNanos(entity.getCacheDuration());
+                return TimeUnit.MILLISECONDS.toNanos(entity.getCacheDuration().toMillis());
             }
         } catch (final Exception e) {
             LOGGER.debug(e.getMessage(), e);

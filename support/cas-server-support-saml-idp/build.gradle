@@ -14,9 +14,11 @@ dependencies {
     implementation project(":core:cas-server-core-services-registry")
     implementation project(":core:cas-server-core-services-api")
     implementation project(":core:cas-server-core-authentication-api")
+    implementation project(":core:cas-server-core-authentication-mfa")
     implementation project(":core:cas-server-core-services-authentication")
     implementation project(":core:cas-server-core-webflow")
     implementation project(":core:cas-server-core-webflow-api")
+    implementation project(":core:cas-server-core-webflow-mfa")
     implementation project(":core:cas-server-core-tickets-api")
     implementation project(":core:cas-server-core-util-api")
     implementation project(":core:cas-server-core-configuration-api")
@@ -30,12 +32,13 @@ dependencies {
     implementation project(":support:cas-server-support-saml-idp-web")
     implementation project(":support:cas-server-support-saml-idp-ticket")
     
+    compileOnly project(":support:cas-server-support-consent-api")
+    
     implementation libraries.casclient
-    implementation libraries.shibidp
     implementation libraries.pac4jcore
-    implementation libraries.shibidpjavasupport
+    implementation libraries.shibutiljavasupport
 
-    testImplementation libraries.pac4j
+    testImplementation libraries.pac4joidcoauth
     testImplementation libraries.pac4jsaml
 
     testImplementation project(path: ":core:cas-server-core-authentication", configuration: "tests")
@@ -46,10 +49,13 @@ dependencies {
     testImplementation project(path: ":core:cas-server-core-webflow", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core", configuration: "tests")
 
+    testImplementation project(":support:cas-server-support-jpa-hibernate")
+    testImplementation project(":support:cas-server-support-jpa-util")
     testImplementation project(":support:cas-server-support-json-service-registry")
     testImplementation project(":support:cas-server-support-jpa-service-registry")
     testImplementation project(":support:cas-server-support-jdbc-drivers")
     testImplementation project(":support:cas-server-support-person-directory")
+    testImplementation project(":support:cas-server-support-consent-api")
 
     testImplementation project(":core:cas-server-core-util")
     testImplementation project(":core:cas-server-core")

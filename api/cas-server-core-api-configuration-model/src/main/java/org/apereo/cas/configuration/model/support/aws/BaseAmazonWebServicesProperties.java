@@ -5,6 +5,7 @@ import org.apereo.cas.configuration.support.RequiresModule;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.core.io.Resource;
 
 import java.io.Serializable;
@@ -18,8 +19,10 @@ import java.io.Serializable;
 @Getter
 @Setter
 @RequiresModule(name = "cas-server-support-aws")
+@Accessors(chain = true)
 public abstract class BaseAmazonWebServicesProperties implements Serializable {
     private static final long serialVersionUID = 6426637051495147084L;
+
     /**
      * Authenticate and bind into the instance via a credentials properties file.
      */
@@ -156,6 +159,4 @@ public abstract class BaseAmazonWebServicesProperties implements Serializable {
      * Local address.
      */
     private String localAddress;
-
-
 }

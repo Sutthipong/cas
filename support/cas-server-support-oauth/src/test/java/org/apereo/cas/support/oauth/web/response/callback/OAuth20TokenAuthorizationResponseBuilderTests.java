@@ -1,11 +1,11 @@
 package org.apereo.cas.support.oauth.web.response.callback;
 
+import org.apereo.cas.AbstractOAuth20Tests;
 import org.apereo.cas.mock.MockTicketGrantingTicket;
 import org.apereo.cas.services.RegisteredServiceTestUtils;
 import org.apereo.cas.support.oauth.OAuth20Constants;
 import org.apereo.cas.support.oauth.OAuth20GrantTypes;
 import org.apereo.cas.support.oauth.OAuth20ResponseTypes;
-import org.apereo.cas.support.oauth.web.AbstractOAuth20Tests;
 import org.apereo.cas.support.oauth.web.response.accesstoken.ext.AccessTokenRequestDataHolder;
 import org.apereo.cas.ticket.accesstoken.OAuth20AccessToken;
 import org.apereo.cas.ticket.accesstoken.OAuth20AccessTokenExpirationPolicyBuilder;
@@ -101,7 +101,7 @@ public class OAuth20TokenAuthorizationResponseBuilderTests extends AbstractOAuth
         verifyParam(params, OAuth20Constants.NONCE, NONCE);
     }
 
-    private void verifyParam(final Map<String, List<String>> params, final String paramName, final String expectedParamValue) {
+    private static void verifyParam(final Map<String, List<String>> params, final String paramName, final String expectedParamValue) {
         assertTrue(params.containsKey(paramName), "Expected " + paramName + "  param in redirect URL");
         assertEquals(1,
             params
@@ -115,18 +115,19 @@ public class OAuth20TokenAuthorizationResponseBuilderTests extends AbstractOAuth
             "Expected unchanged " + paramName + "  param");
     }
 
-    private Map<String, List<String>> splitQuery(final String fragment) {
+    private static Map<String, List<String>> splitQuery(final String fragment) {
         if (StringUtils.isBlank(fragment)) {
             return new HashMap<>(0);
         }
         return Arrays
             .stream(fragment.split("&"))
-            .map(this::splitQueryParameter)
-            .collect(Collectors.groupingBy(AbstractMap.SimpleImmutableEntry::getKey, LinkedHashMap::new, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+            .map(OAuth20TokenAuthorizationResponseBuilderTests::splitQueryParameter)
+            .collect(Collectors.groupingBy(AbstractMap.SimpleImmutableEntry::getKey,
+                LinkedHashMap::new, Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
     }
 
-    private AbstractMap.SimpleImmutableEntry<String, String> splitQueryParameter(final String it) {
-        val idx = it.indexOf("=");
+    private static AbstractMap.SimpleImmutableEntry<String, String> splitQueryParameter(final String it) {
+        val idx = it.indexOf('=');
         val key = idx > 0 ? it.substring(0, idx) : it;
         val value = idx > 0 && it.length() > idx + 1 ? it.substring(idx + 1) : null;
         return new AbstractMap.SimpleImmutableEntry<>(key, value);

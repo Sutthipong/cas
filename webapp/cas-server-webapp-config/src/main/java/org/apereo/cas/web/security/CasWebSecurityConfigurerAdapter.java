@@ -1,10 +1,9 @@
 package org.apereo.cas.web.security;
 
-import org.apereo.cas.authentication.support.password.PasswordEncoderUtils;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.configuration.model.core.monitor.ActuatorEndpointProperties;
 import org.apereo.cas.configuration.model.core.monitor.MonitorProperties;
-import org.apereo.cas.configuration.support.JpaBeans;
+import org.apereo.cas.util.LdapUtils;
 import org.apereo.cas.web.security.authentication.MonitorEndpointLdapAuthenticationProvider;
 
 import lombok.RequiredArgsConstructor;
@@ -13,11 +12,11 @@ import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.lambda.Unchecked;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.endpoint.web.PathMappedEndpoints;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.authentication.jaas.JaasAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @RequiredArgsConstructor
 @Slf4j
-public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter {
+public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapter implements DisposableBean {
     /**
      * Endpoint url used for admin-level form-login of endpoints.
      */
@@ -48,7 +47,14 @@ public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapte
 
     private final PathMappedEndpoints pathMappedEndpoints;
 
-    private final ApplicationContext applicationContext;
+    private MonitorEndpointLdapAuthenticationProvider monitorEndpointLdapAuthenticationProvider;
+
+    @Override
+    public void destroy() {
+        if (monitorEndpointLdapAuthenticationProvider != null) {
+            monitorEndpointLdapAuthenticationProvider.destroy();
+        }
+    }
 
     @Override
     protected void configure(final AuthenticationManagerBuilder auth) throws Exception {
@@ -64,13 +70,6 @@ public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapte
             configureLdapAuthenticationProvider(auth, ldap);
         } else {
             LOGGER.trace("No LDAP url or search filter is defined to enable LDAP authentication");
-        }
-
-        val jdbc = casProperties.getMonitor().getEndpoints().getJdbc();
-        if (StringUtils.isNotBlank(jdbc.getQuery())) {
-            configureJdbcAuthenticationProvider(auth, jdbc);
-        } else {
-            LOGGER.trace("No JDBC query is defined to enable JDBC authentication");
         }
 
         if (!auth.isConfigured()) {
@@ -123,22 +122,6 @@ public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapte
     }
 
     /**
-     * Configure jdbc authentication provider.
-     *
-     * @param auth the auth
-     * @param jdbc the jdbc
-     * @throws Exception the exception
-     */
-    protected void configureJdbcAuthenticationProvider(final AuthenticationManagerBuilder auth, final MonitorProperties.Endpoints.JdbcSecurity jdbc) throws Exception {
-        val passwordEncoder = PasswordEncoderUtils.newPasswordEncoder(jdbc.getPasswordEncoder(), applicationContext);
-        auth.jdbcAuthentication()
-            .passwordEncoder(passwordEncoder)
-            .usersByUsernameQuery(jdbc.getQuery())
-            .rolePrefix(jdbc.getRolePrefix())
-            .dataSource(JpaBeans.newDataSource(jdbc));
-    }
-
-    /**
      * Configure ldap authentication provider.
      *
      * @param auth the auth
@@ -146,8 +129,10 @@ public class CasWebSecurityConfigurerAdapter extends WebSecurityConfigurerAdapte
      */
     protected void configureLdapAuthenticationProvider(final AuthenticationManagerBuilder auth, final MonitorProperties.Endpoints.LdapSecurity ldap) {
         if (isLdapAuthorizationActive()) {
-            val p = new MonitorEndpointLdapAuthenticationProvider(ldap, securityProperties);
-            auth.authenticationProvider(p);
+            val connectionFactory = LdapUtils.newLdaptiveConnectionFactory(ldap);
+            val authenticator = LdapUtils.newLdaptiveAuthenticator(ldap);
+            monitorEndpointLdapAuthenticationProvider = new MonitorEndpointLdapAuthenticationProvider(ldap, securityProperties, connectionFactory, authenticator);
+            auth.authenticationProvider(monitorEndpointLdapAuthenticationProvider);
         } else {
             LOGGER.trace("LDAP authorization is undefined, given no LDAP url, base-dn, search filter or role/group filter is configured");
         }

@@ -6,6 +6,7 @@ import org.apereo.cas.configuration.support.RequiresModule;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RequiresModule(name = "cas-server-support-pac4j-webflow")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Pac4jOAuth20ClientProperties extends Pac4jIdentifiableClientProperties {
 
     private static final long serialVersionUID = -1240711580664148382L;
@@ -42,6 +44,11 @@ public class Pac4jOAuth20ClientProperties extends Pac4jIdentifiableClientPropert
     private String profileUrl;
 
     /**
+     * The scope requested from the identity provider.
+     */
+    private String scope;
+
+    /**
      * Profile path portion of the profile endpoint of the provider.
      */
     private String profilePath;
@@ -60,4 +67,8 @@ public class Pac4jOAuth20ClientProperties extends Pac4jIdentifiableClientPropert
      * Custom parameters in form of key-value pairs sent along in authZ requests, etc.
      */
     private Map<String, String> customParams = new LinkedHashMap<>(1);
+
+    public Pac4jOAuth20ClientProperties() {
+        setCallbackUrlType(CallbackUrlTypes.PATH_PARAMETER);
+    }
 }

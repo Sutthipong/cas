@@ -3,6 +3,7 @@ package org.apereo.cas.services;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 4.1
  */
+@Tag("Simple")
 public class DefaultRegisteredServiceAccessStrategyTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "x509CertificateCredential.json");
@@ -64,6 +66,14 @@ public class DefaultRegisteredServiceAccessStrategyTests {
     @Test
     public void checkDefaultImpls() {
         val authz = new DefaultRegisteredServiceAccessStrategy();
+        authz.postLoad();
+        authz.setServiceAccessAllowed(true);
+        assertEquals(0, authz.getOrder());
+    }
+
+    @Test
+    public void checkLoad() {
+        val authz = new DefaultRegisteredServiceAccessStrategy(getRequiredAttributes(), getRejectedAttributes());
         assertEquals(0, authz.getOrder());
     }
 

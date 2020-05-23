@@ -25,7 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
  */
 @Configuration("casAcceptableUsagePolicyMongoDbConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@ConditionalOnProperty(prefix = "cas.acceptableUsagePolicy", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "cas.acceptable-usage-policy", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class CasAcceptableUsagePolicyMongoDbConfiguration {
 
     @Autowired
@@ -48,10 +48,8 @@ public class CasAcceptableUsagePolicyMongoDbConfiguration {
     @RefreshScope
     @Bean
     public AcceptableUsagePolicyRepository acceptableUsagePolicyRepository() {
-        val mongo = casProperties.getAcceptableUsagePolicy().getMongo();
         return new MongoDbAcceptableUsagePolicyRepository(ticketRegistrySupport.getObject(),
-            casProperties.getAcceptableUsagePolicy().getAupAttributeName(),
-            mongoAcceptableUsagePolicyTemplate(),
-            mongo.getCollection());
+            casProperties.getAcceptableUsagePolicy(),
+            mongoAcceptableUsagePolicyTemplate());
     }
 }

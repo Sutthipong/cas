@@ -13,10 +13,10 @@ import org.apereo.cas.ticket.refreshtoken.OAuth20DefaultRefreshTokenFactory;
 import org.apereo.cas.token.JwtBuilder;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.crypto.CipherExecutor;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.*;
         "cas.ticket.registry.dynamoDb.localInstance=true",
         "cas.ticket.registry.dynamoDb.region=us-east-1"
     })
-@EnabledIfContinuousIntegration
 @EnabledIfPortOpen(port = 8000)
 public class DynamoDbTicketRegistryTests extends BaseTicketRegistryTests {
     static {
@@ -96,7 +95,7 @@ public class DynamoDbTicketRegistryTests extends BaseTicketRegistryTests {
         val token = new OAuth20DefaultRefreshTokenFactory(neverExpiresExpirationPolicyBuilder(), servicesManager)
             .create(RegisteredServiceTestUtils.getService(),
                 RegisteredServiceTestUtils.getAuthentication(), new MockTicketGrantingTicket("casuser"),
-                CollectionUtils.wrapSet("1", "2"), "clientId1234567", new HashMap<>());
+                CollectionUtils.wrapSet("1", "2"), "clientId1234567", StringUtils.EMPTY, new HashMap<>());
         ticketRegistry.addTicket(token);
         assertSame(1, ticketRegistry.deleteTicket(token.getId()), "Wrong ticket count");
         assertNull(ticketRegistry.getTicket(token.getId()));

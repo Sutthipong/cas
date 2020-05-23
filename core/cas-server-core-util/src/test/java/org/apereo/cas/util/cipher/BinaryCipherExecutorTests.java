@@ -1,15 +1,15 @@
 package org.apereo.cas.util.cipher;
 
 import org.apereo.cas.util.crypto.CipherExecutor;
-
 import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-
-import static org.junit.jupiter.api.Assertions.*;
+import java.security.InvalidAlgorithmParameterException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test cases for {@link BaseBinaryCipherExecutor}.
@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 4.2
  */
+@Tag("Simple")
 public class BinaryCipherExecutorTests {
     private static final String TEST_VALUE = "ThisIsATestValueThatIsGoingToBeEncodedAndDecodedAgainAndAgain";
 
@@ -36,8 +37,8 @@ public class BinaryCipherExecutorTests {
         final CipherExecutor<byte[], byte[]> cc = new TestBinaryCipherExecutor("0000",
             "1234", 512, 16) {
         };
-
-        assertThrows(InvalidKeyException.class, () -> cc.encode(TEST_VALUE.getBytes(StandardCharsets.UTF_8), ArrayUtils.EMPTY_OBJECT_ARRAY));
+        assertThrows(InvalidAlgorithmParameterException.class,
+            () -> cc.encode(TEST_VALUE.getBytes(StandardCharsets.UTF_8), ArrayUtils.EMPTY_OBJECT_ARRAY));
     }
 
     @Test

@@ -5,17 +5,20 @@ import org.apereo.cas.services.RegisteredServiceTestUtils;
 import org.apereo.cas.ticket.ExpirationPolicy;
 import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.ticket.TicketGrantingTicketImpl;
+import org.apereo.cas.util.serialization.SerializationUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTimeUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -26,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 3.4.10
  */
 @DirtiesContext
+@Tag("Simple")
 public class TicketGrantingTicketExpirationPolicyTests {
 
     private static final long HARD_TIMEOUT = 2;
@@ -54,8 +58,9 @@ public class TicketGrantingTicketExpirationPolicyTests {
          */
         val creationTime = ticketGrantingTicket.getCreationTime();
         while (creationTime.plus(HARD_TIMEOUT - SLIDING_TIMEOUT / 2, ChronoUnit.SECONDS)
-            .isAfter(org.apereo.cas.util.DateTimeUtils.zonedDateTimeOf(DateTimeUtils.currentTimeMillis()))) {
-            ticketGrantingTicket.grantServiceTicket(TGT_ID, RegisteredServiceTestUtils.getService(), expirationPolicy, false, true);
+            .isAfter(org.apereo.cas.util.DateTimeUtils.zonedDateTimeOf(Instant.ofEpochMilli(DateTimeUtils.currentTimeMillis())))) {
+            ticketGrantingTicket.grantServiceTicket(TGT_ID,
+                RegisteredServiceTestUtils.getService(), expirationPolicy, false, true);
 
             val tt = DateTimeUtils.currentTimeMillis() + (SLIDING_TIMEOUT - TIMEOUT_BUFFER) * 1_000;
             DateTimeUtils.setCurrentMillisFixed(tt);
@@ -101,6 +106,13 @@ public class TicketGrantingTicketExpirationPolicyTests {
         assertEquals(policy, policyRead);
     }
 
+    @Test
+    public void verifySerialization() {
+        val result = SerializationUtils.serialize(expirationPolicy);
+        val policyRead = SerializationUtils.deserialize(result, TicketGrantingTicketExpirationPolicy.class);
+        assertEquals(expirationPolicy, policyRead);
+    }
+
     private static class MovingTimeTicketExpirationPolicy extends TicketGrantingTicketExpirationPolicy {
         private static final long serialVersionUID = -3901717185202249332L;
 
@@ -110,7 +122,7 @@ public class TicketGrantingTicketExpirationPolicyTests {
 
         @Override
         protected ZonedDateTime getCurrentSystemTime() {
-            return org.apereo.cas.util.DateTimeUtils.zonedDateTimeOf(DateTimeUtils.currentTimeMillis());
+            return org.apereo.cas.util.DateTimeUtils.zonedDateTimeOf(Instant.ofEpochMilli(DateTimeUtils.currentTimeMillis()));
         }
     }
 }

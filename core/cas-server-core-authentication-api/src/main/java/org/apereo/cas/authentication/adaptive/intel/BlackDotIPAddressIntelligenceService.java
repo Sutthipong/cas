@@ -9,6 +9,7 @@ import lombok.val;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
+import org.hjson.JsonValue;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.webflow.execution.RequestContext;
@@ -71,7 +72,7 @@ public class BlackDotIPAddressIntelligenceService extends BaseIPAddressIntellige
             val result = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             LOGGER.debug("Received payload result after examining IP address [{}] as [{}]", clientIpAddress, result);
 
-            val json = MAPPER.readValue(result, Map.class);
+            val json = MAPPER.readValue(JsonValue.readHjson(result).toString(), Map.class);
             val status = json.getOrDefault("status", "error").toString();
             if ("success".equalsIgnoreCase(status)) {
                 val rank = Double.parseDouble(json.getOrDefault("result", 1).toString());
@@ -90,7 +91,11 @@ public class BlackDotIPAddressIntelligenceService extends BaseIPAddressIntellige
             LOGGER.error(message);
             return bannedResponse;
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(e.getMessage(), e);
+            } else {
+                LOGGER.error(e.getMessage());
+            }
         } finally {
             HttpUtils.close(response);
         }

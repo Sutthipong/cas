@@ -62,10 +62,29 @@ public class JwtBuilder {
             try {
                 return JWTClaimsSet.parse(jwt);
             } catch (final Exception ex) {
-                LOGGER.error(e.getMessage(), ex);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.error(e.getMessage(), ex);
+                } else {
+                    LOGGER.error(ex.getMessage());
+                }
                 throw new IllegalArgumentException("Unable to parse JWT");
             }
         }
+    }
+
+    /**
+     * Build plain string.
+     *
+     * @param claimsSet         the claims set
+     * @param registeredService the registered service
+     * @return the jwt
+     */
+    public static String buildPlain(final JWTClaimsSet claimsSet,
+                                    final Optional<RegisteredService> registeredService) {
+        val header = new PlainHeader.Builder().type(JOSEObjectType.JWT);
+        registeredService.ifPresent(svc ->
+            header.customParam(RegisteredServiceCipherExecutor.CUSTOM_HEADER_REGISTERED_SERVICE_ID, svc.getId()));
+        return new PlainJWT(header.build(), claimsSet).serialize();
     }
 
     /**
@@ -146,11 +165,7 @@ public class JwtBuilder {
             LOGGER.trace("Encoding JWT based on default global keys for [{}]", serviceAudience);
             return defaultTokenCipherExecutor.encode(jwtJson);
         }
-        val header = new PlainHeader.Builder()
-            .type(JOSEObjectType.JWT)
-            .customParam(RegisteredServiceCipherExecutor.CUSTOM_HEADER_REGISTERED_SERVICE_ID, registeredService.getId())
-            .build();
-        val token = new PlainJWT(header, claimsSet).serialize();
+        val token = buildPlain(claimsSet, Optional.of(registeredService));
         LOGGER.trace("Generating plain JWT as the ticket: [{}]", token);
         return token;
     }
@@ -182,10 +197,10 @@ public class JwtBuilder {
         private final Date validUntilDate;
 
         @Builder.Default
-        private Optional<RegisteredService> registeredService = Optional.empty();
+        private final Map<String, List<Object>> attributes = new LinkedHashMap<>(MAP_SIZE);
 
         @Builder.Default
-        private final Map<String, List<Object>> attributes = new LinkedHashMap<>(MAP_SIZE);
+        private Optional<RegisteredService> registeredService = Optional.empty();
 
     }
 }

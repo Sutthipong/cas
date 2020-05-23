@@ -20,7 +20,7 @@ import org.apereo.cas.config.RadiusConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.util.CollectionUtils;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
+import org.apereo.cas.util.junit.EnabledIfPortOpen;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
@@ -70,11 +70,11 @@ import static org.junit.jupiter.api.Assertions.*;
 }, properties = {
     "cas.authn.radius.server.protocol=PAP",
     "cas.authn.radius.client.sharedSecret=testing123",
-    "cas.authn.radius.client.inetAddress=localhost",
+    "cas.authn.radius.client.inet-address=localhost",
     "cas.authn.mfa.radius.id=mfa-dummy"
 })
 @Tag("Radius")
-@EnabledIfContinuousIntegration
+@EnabledIfPortOpen(port = 1812)
 public class RadiusAccessChallengedMultifactorAuthenticationTriggerTests {
     @Autowired
     @Qualifier("radiusAccessChallengedMultifactorAuthenticationTrigger")

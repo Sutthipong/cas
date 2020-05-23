@@ -30,6 +30,7 @@ import org.apereo.cas.util.crypto.CipherExecutor;
 import org.apereo.cas.validation.Cas20WithoutProxyingValidationSpecification;
 
 import lombok.val;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -41,17 +42,8 @@ import static org.mockito.Mockito.*;
  * @author Scott Battaglia
  * @since 3.0.0
  */
+@Tag("Simple")
 public class DefaultCentralAuthenticationServiceTests extends AbstractCentralAuthenticationServiceTests {
-
-    private static Service getService(final String name) {
-        val request = new MockHttpServletRequest();
-        request.addParameter(CasProtocolConstants.PARAMETER_SERVICE, name);
-        return new WebApplicationServiceFactory().createService(request);
-    }
-
-    private static Service getService() {
-        return getService(CoreAuthenticationTestUtils.CONST_TEST_URL);
-    }
 
     @Test
     public void verifyBadCredentialsOnTicketGrantingTicketCreation() {
@@ -124,11 +116,10 @@ public class DefaultCentralAuthenticationServiceTests extends AbstractCentralAut
 
     @Test
     public void verifyGrantServiceTicketPassesAuthzRule() {
-        val ctx = CoreAuthenticationTestUtils.getAuthenticationResult(getAuthenticationSystemSupport(),
-            getService("TestServiceAttributeForAuthzPasses"));
+        val service = getService("TestServiceAttributeForAuthzPasses");
+        val ctx = CoreAuthenticationTestUtils.getAuthenticationResult(getAuthenticationSystemSupport(), service);
         val ticketId = getCentralAuthenticationService().getObject().createTicketGrantingTicket(ctx);
-        getCentralAuthenticationService().getObject().grantServiceTicket(ticketId.getId(),
-            getService("TestServiceAttributeForAuthzPasses"), ctx);
+        getCentralAuthenticationService().getObject().grantServiceTicket(ticketId.getId(), service, ctx);
     }
 
     @Test
@@ -448,5 +439,15 @@ public class DefaultCentralAuthenticationServiceTests extends AbstractCentralAut
             mock(AuditableExecution.class),
             new DefaultServiceMatchingStrategy(servicesManager));
         cas.destroyTicketGrantingTicket(tgt.getId());
+    }
+
+    private static Service getService(final String name) {
+        val request = new MockHttpServletRequest();
+        request.addParameter(CasProtocolConstants.PARAMETER_SERVICE, name);
+        return new WebApplicationServiceFactory().createService(request);
+    }
+
+    private static Service getService() {
+        return getService(CoreAuthenticationTestUtils.CONST_TEST_URL);
     }
 }

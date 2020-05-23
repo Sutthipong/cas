@@ -40,7 +40,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration("grouperMultifactorAuthenticationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @Slf4j
-@ConditionalOnProperty(name = "cas.authn.mfa.grouperGroupField")
+@ConditionalOnProperty(name = "cas.authn.mfa.grouper-group-field")
 public class GrouperMultifactorAuthenticationConfiguration {
     @Autowired
     @Qualifier("registeredServiceAccessStrategyEnforcer")
@@ -115,7 +115,6 @@ public class GrouperMultifactorAuthenticationConfiguration {
             .registeredServiceAccessStrategyEnforcer(registeredServiceAccessStrategyEnforcer.getObject())
             .casProperties(casProperties)
             .ticketRegistry(ticketRegistry.getObject())
-            .eventPublisher(applicationContext)
             .applicationContext(applicationContext)
             .build();
 

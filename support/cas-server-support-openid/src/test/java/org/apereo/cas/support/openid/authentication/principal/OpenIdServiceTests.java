@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openid4java.association.Association;
 import org.openid4java.server.ServerManager;
@@ -34,7 +35,8 @@ import static org.mockito.Mockito.*;
  * @deprecated 6.2
  */
 @Slf4j
-@Deprecated
+@Deprecated(since = "6.2.0")
+@Tag("Simple")
 public class OpenIdServiceTests extends AbstractOpenIdTests {
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "openIdService.json");
 

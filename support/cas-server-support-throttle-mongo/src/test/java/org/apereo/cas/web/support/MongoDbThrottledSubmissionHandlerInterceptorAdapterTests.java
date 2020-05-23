@@ -1,7 +1,7 @@
 package org.apereo.cas.web.support;
 
 import org.apereo.cas.config.CasMongoDbThrottlingConfiguration;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
+import org.apereo.cas.config.CasSupportMongoDbAuditConfiguration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
 import lombok.Getter;
@@ -19,10 +19,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 @Tag("MongoDb")
 @SpringBootTest(classes = {
     CasMongoDbThrottlingConfiguration.class,
+    CasSupportMongoDbAuditConfiguration.class,
     BaseThrottledSubmissionHandlerInterceptorAdapterTests.SharedTestConfiguration.class
 },
     properties = {
         "cas.authn.throttle.usernameParameter=username",
+        "cas.authn.throttle.failure.range-seconds=5",
         "cas.audit.mongo.databaseName=throttle",
         "cas.audit.mongo.host=localhost",
         "cas.audit.mongo.port=27017",
@@ -31,10 +33,10 @@ import org.springframework.boot.test.context.SpringBootTest;
         "cas.audit.mongo.userId=root",
         "cas.audit.mongo.password=secret",
         "cas.audit.mongo.authenticationDatabaseName=admin",
-        "cas.audit.mongo.asynchronous=false"})
+        "cas.audit.mongo.asynchronous=false"
+})
 @Getter
 @EnabledIfPortOpen(port = 27017)
-@EnabledIfContinuousIntegration
 public class MongoDbThrottledSubmissionHandlerInterceptorAdapterTests extends
     BaseThrottledSubmissionHandlerInterceptorAdapterTests {
 

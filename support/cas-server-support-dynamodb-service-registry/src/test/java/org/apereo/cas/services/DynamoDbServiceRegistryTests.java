@@ -4,7 +4,6 @@ import org.apereo.cas.config.CasCoreAuthenticationMetadataConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
 import org.apereo.cas.config.DynamoDbServiceRegistryConfiguration;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
 import org.junit.jupiter.api.Tag;
@@ -26,13 +25,12 @@ import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
     CasCoreAuthenticationMetadataConfiguration.class,
     RefreshAutoConfiguration.class},
     properties = {
-        "cas.serviceRegistry.dynamoDb.endpoint=http://localhost:8000",
-        "cas.serviceRegistry.dynamoDb.dropTablesOnStartup=true",
-        "cas.serviceRegistry.dynamoDb.localInstance=true",
-        "cas.serviceRegistry.dynamoDb.region=us-east-1"
+        "cas.service-registry.dynamoDb.endpoint=http://localhost:8000",
+        "cas.service-registry.dynamoDb.dropTablesOnStartup=true",
+        "cas.service-registry.dynamoDb.localInstance=true",
+        "cas.service-registry.dynamoDb.region=us-east-1"
     })
 @Tag("DynamoDb")
-@EnabledIfContinuousIntegration
 @EnabledIfPortOpen(port = 8000)
 public class DynamoDbServiceRegistryTests extends AbstractServiceRegistryTests {
 

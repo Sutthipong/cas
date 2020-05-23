@@ -1,5 +1,6 @@
 package org.apereo.cas.authentication.attribute;
 
+import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.util.ResourceUtils;
 import org.apereo.cas.util.io.FileWatcherService;
 
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.hjson.JsonValue;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 
 /**
  * This is {@link DefaultAttributeDefinitionStore}.
@@ -66,9 +69,14 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
                     try {
                         loadAttributeDefinitionsFromInputStream(new FileSystemResource(file));
                     } catch (final Exception e) {
-                        LOGGER.error(e.getMessage(), e);
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.error(e.getMessage(), e);
+                        } else {
+                            LOGGER.error(e.getMessage());
+                        }
                     }
                 });
+                this.storeWatcherService.start(getClass().getSimpleName());
             }
         }
     }
@@ -78,12 +86,16 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
     }
 
     private void loadAttributeDefinitionsFromInputStream(final Resource resource) throws IOException {
-        LOGGER.trace("Loading attribute definitions from [{}]", resource);
-        val json = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        LOGGER.trace("Loaded attribute definitions [{}] from [{}]", json, resource);
-        val map = MAPPER.readValue(json, new TypeReference<Map<String, AttributeDefinition>>() {
-        });
-        map.forEach(this::registerAttributeDefinition);
+        try {
+            LOGGER.trace("Loading attribute definitions from [{}]", resource);
+            val json = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            LOGGER.trace("Loaded attribute definitions [{}] from [{}]", json, resource);
+            val map = MAPPER.readValue(JsonValue.readHjson(json).toString(), new TypeReference<Map<String, AttributeDefinition>>() {
+            });
+            map.forEach(this::registerAttributeDefinition);
+        } catch (final Exception e) {
+            LOGGER.warn(e.getMessage(), e);
+        }
     }
 
     @Override
@@ -113,18 +125,38 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
     }
 
     @Override
+    public <T extends AttributeDefinition> Optional<T> locateAttributeDefinition(final String key, final Class<T> clazz) {
+        LOGGER.trace("Locating attribute definition for [{}]", key);
+        val attributeDefinition = attributeDefinitions.get(key);
+        if (attributeDefinition != null && clazz.isAssignableFrom(attributeDefinition.getClass())) {
+            return Optional.of((T) attributeDefinition);
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public <T extends AttributeDefinition> Optional<T> locateAttributeDefinition(final Predicate<AttributeDefinition> predicate) {
+        return attributeDefinitions.values()
+            .stream()
+            .filter(predicate::test)
+            .map(defn -> (T) defn)
+            .findFirst();
+    }
+
+    @Override
     public Collection<AttributeDefinition> getAttributeDefinitions() {
         return attributeDefinitions.values();
     }
 
     @Override
-    public Optional<Pair<AttributeDefinition, List<Object>>> resolveAttributeValues(final String key, final List<Object> attributeValues) {
+    public Optional<Pair<AttributeDefinition, List<Object>>> resolveAttributeValues(final String key, final List<Object> attributeValues,
+                                                                                    final RegisteredService registeredService) {
         val result = locateAttributeDefinition(key);
         if (result.isEmpty()) {
             return Optional.empty();
         }
         val definition = result.get();
-        val currentValues = definition.resolveAttributeValues(attributeValues, this.scope);
+        val currentValues = definition.resolveAttributeValues(attributeValues, this.scope, registeredService);
         return Optional.of(Pair.of(definition, currentValues));
     }
 

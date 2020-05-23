@@ -8,10 +8,9 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.io.WatcherService;
 
 import lombok.Getter;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.Resource;
 
-import java.nio.file.Path;
 import java.util.Collection;
 
 /**
@@ -42,53 +41,17 @@ public class YamlServiceRegistry extends AbstractResourceBasedServiceRegistry {
     /**
      * File extension of registered service YAML files.
      */
-    private static final String[] FILE_EXTENSIONS = new String[] {"yml", "yaml"};
+    private static final String[] FILE_EXTENSIONS = new String[]{"yml", "yaml"};
 
-    /**
-     * Instantiates a new YAML service registry dao.
-     * Sets the path to the directory where YAML service registry entries are
-     * stored. Uses the {@link RegisteredServiceYamlSerializer} by default.
-     *
-     * @param configDirectory                      the config directory where service registry files can be found.
-     * @param serviceRegistryConfigWatcher         the service registry config watcher
-     * @param eventPublisher                       the event publisher
-     * @param registeredServiceReplicationStrategy the registered service replication strategy
-     * @param resourceNamingStrategy               the registered service naming strategy
-     * @param serviceRegistryListeners             the service registry listeners
-     */
-    public YamlServiceRegistry(final Path configDirectory,
-                               final WatcherService serviceRegistryConfigWatcher,
-                               final ApplicationEventPublisher eventPublisher,
-                               final RegisteredServiceReplicationStrategy registeredServiceReplicationStrategy,
-                               final RegisteredServiceResourceNamingStrategy resourceNamingStrategy,
-                               final Collection<ServiceRegistryListener> serviceRegistryListeners) {
-        super(configDirectory, new RegisteredServiceYamlSerializer(), eventPublisher,
-            registeredServiceReplicationStrategy, resourceNamingStrategy, serviceRegistryListeners,
-            serviceRegistryConfigWatcher);
-    }
-
-    /**
-     * Instantiates a new YAML service registry dao.
-     * Sets the path to the directory where YAML service registry entries are
-     * stored. Uses the {@link RegisteredServiceYamlSerializer} by default.
-     *
-     * @param configDirectory                      the config directory where service registry files can be found.
-     * @param serviceRegistryConfigWatcher         the service registry config watcher
-     * @param eventPublisher                       the event publisher
-     * @param registeredServiceReplicationStrategy the registered service replication strategy
-     * @param resourceNamingStrategy               the registered service naming strategy
-     * @param serviceRegistryListeners             the service registry listeners
-     * @throws Exception the IO exception
-     */
     public YamlServiceRegistry(final Resource configDirectory,
                                final WatcherService serviceRegistryConfigWatcher,
-                               final ApplicationEventPublisher eventPublisher,
+                               final ConfigurableApplicationContext applicationContext,
                                final RegisteredServiceReplicationStrategy registeredServiceReplicationStrategy,
                                final RegisteredServiceResourceNamingStrategy resourceNamingStrategy,
                                final Collection<ServiceRegistryListener> serviceRegistryListeners) throws Exception {
         super(configDirectory,
             CollectionUtils.wrapList(new RegisteredServiceYamlSerializer()),
-            eventPublisher, registeredServiceReplicationStrategy,
+            applicationContext, registeredServiceReplicationStrategy,
             resourceNamingStrategy, serviceRegistryListeners, serviceRegistryConfigWatcher);
     }
 

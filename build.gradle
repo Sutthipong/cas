@@ -33,14 +33,13 @@ buildscript {
         classpath "org.gradle:test-retry-gradle-plugin:$gradleRetryVersion"
         classpath "com.github.jk1:gradle-license-report:$gradleLicenseVersion"
         classpath "org.springframework.boot:spring-boot-gradle-plugin:$springBootVersion"
-        classpath "com.netflix.nebula:gradle-lint-plugin:$gradleLintVersion"
         classpath "gradle.plugin.com.gorylenko.gradle-git-properties:gradle-git-properties:$gradleGitVersion"
         classpath "io.franzbecker:gradle-lombok:$gradleLombokVersion"
         classpath "com.github.ben-manes:gradle-versions-plugin:$gradleDependencyVersionsVersion"
         classpath "io.spring.gradle:propdeps-plugin:$gradlePropDepsVersion"
         classpath "net.ltgt.gradle:gradle-errorprone-javacplugin-plugin:$gradleErrorProneVersion"
         classpath "org.owasp:dependency-check-gradle:$gradleDependencyCheckVersion"
-        classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:$gradleSpotbugsVersion"
+        classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:$gradleSpotbugsVersion"
         classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:$gradleSonarqubeVersion"
         classpath "net.rdrei.android.buildtimetracker:gradle-plugin:$gradleTimeTrackerVersion"
     }
@@ -59,7 +58,6 @@ ext {
         throw new GradleException("No credentials are configured to publish releases or snapshots")
     }
 
-    testCategoryType = System.getProperty("testCategoryType")
     skipBootifulArtifact = System.getProperty("skipBootifulArtifact")
     skipErrorProneCompiler = System.getProperty("skipErrorProneCompiler")
 
@@ -70,6 +68,15 @@ ext {
     generateGitProperties = Boolean.getBoolean("generateGitProperties")
 
     continuousIntegrationBuild = System.getenv("CI") || Boolean.getBoolean("CI") || Boolean.getBoolean("TRAVIS") || Boolean.getBoolean("CONTINUOUS_INTEGRATION")
+
+    excludedFilesFromTestCoverage = [
+            '**/**ConfigurationMetadata**',
+            '**/**Application**',
+            '**/**Application$**',
+            '**/**Exception$**',
+            '**/**Properties**',
+            '**/**Properties$**'
+    ]
 }
 
 def isArtifactSigningRequired = {
@@ -78,7 +85,7 @@ def isArtifactSigningRequired = {
 
 apply from: rootProject.file("gradle/overrides.gradle")
 apply from: rootProject.file("gradle/dependencies.gradle")
-apply plugin: "com.github.ben-manes.versions"
+apply from: rootProject.file("gradle/dependencyUpdates.gradle")
 
 if (!Boolean.getBoolean("skipSonarqube")) {
     apply plugin: "org.sonarqube"
@@ -156,11 +163,6 @@ allprojects {
 
     project.ext["forceBootifulArtifact"] = null
 
-    if (!rootProject.publishSnapshots && !Boolean.getBoolean("skipGradleLint")) {
-        apply plugin: "nebula.lint"
-        gradleLint.rules = ["dependency-parentheses", "dependency-tuple"]
-    }
-
     afterEvaluate { project ->
         jacoco {
             toolVersion = "$gradleJacocoVersion"
@@ -179,10 +181,9 @@ allprojects {
     }
 
     repositories {
-        mavenLocal{
+        mavenLocal {
             content {
-                includeModuleByRegex "org\\.apereo", "person-directory.*"
-                includeGroupByRegex "$mavenLocalGroupInclude"
+                includeGroup "org.apereo.service.persondir"
             }
         }
         mavenCentral()
@@ -243,10 +244,9 @@ subprojects {
     ext.libraries = rootProject.ext.libraries
 
     repositories {
-        mavenLocal{
+        mavenLocal {
             content {
-                includeModuleByRegex "org\\.apereo", "person-directory.*"
-                includeGroupByRegex "$mavenLocalGroupInclude"
+                includeGroup "org.apereo.service.persondir"
             }
         }
         mavenCentral()
@@ -295,7 +295,7 @@ subprojects {
         }
         jcenter()
     }
-    
+
     configurations {
         tests
     }
@@ -323,6 +323,7 @@ subprojects {
         exclude(group: "org.slf4j", module: "slf4j-log4j12")
         exclude(group: "org.slf4j", module: "slf4j-simple")
         exclude(group: "org.apache.logging.log4j", module: "log4j-to-slf4j")
+        exclude(group: "pull-parser", module: "pull-parser")
     }
 
     /**
@@ -372,9 +373,23 @@ subprojects {
                         maven {
                             name "Sonatype-Releases"
                             url "${sonatypeRepositoryUrl}"
+                            mavenContent {
+                                releasesOnly()
+                            }
                             credentials {
                                 username "${sonatypeUsername}"
                                 password "${sonatypePassword}"
+                            }
+                        }
+                        maven {
+                            name = "GitHubPackages-Releases"
+                            url = uri("${githubPackagesRepositoryUrl}")
+                            mavenContent {
+                                releasesOnly()
+                            }
+                            credentials {
+                                username = "${githubPackagesUsername}"
+                                password = "${githubPackagesToken}"
                             }
                         }
                     }
@@ -382,6 +397,9 @@ subprojects {
                         maven {
                             name "Sonatype-Snapshots"
                             url "${sonatypeSnapshotsRepositoryUrl}"
+                            mavenContent {
+                                snapshotsOnly()
+                            }
                             credentials {
                                 username "${sonatypeUsername}"
                                 password "${sonatypePassword}"
@@ -390,22 +408,36 @@ subprojects {
                     }
                 }
             }
-            
+
             signing {
                 required = isArtifactSigningRequired
                 sign publishing.publications
             }
         }
     }
-
+    
     artifacts {
         tests testJar
-
-        if (!rootProject.publishSnapshots) {
+        if (rootProject.publishReleases || rootProject.publishSnapshots) {
             archives sourcesJar
             archives javadocJar
             archives resourcesJar
-            archives testJar
+        }
+        archives testJar
+    }
+    
+    jacocoTestReport {
+        reports {
+            xml.enabled(true)
+            html.enabled(true)
+        }
+
+        jacocoTestReport {
+            afterEvaluate {
+                classDirectories.setFrom(files(classDirectories.files.collect {
+                    fileTree(dir: it, exclude: rootProject.excludedFilesFromTestCoverage)
+                }))
+            }
         }
     }
 
@@ -463,13 +495,13 @@ subprojects {
     jar {
         manifest {
             attributes(
-                "Automatic-Module-Name": project.name,
-                "Implementation-Title": project.name,
-                "Implementation-Vendor": project.group,
-                "Created-By": project.group,
-                "Implementation-Date": java.time.ZonedDateTime.now(ZoneId.systemDefault()),
-                "Specification-Version": "${-> project.ext.has("gitProps") ? project.ext.gitProps['git.commit.id'] : 'N/A'}",
-                "Implementation-Version": project.version)
+                    "Automatic-Module-Name": project.name,
+                    "Implementation-Title": project.name,
+                    "Implementation-Vendor": project.group,
+                    "Created-By": project.group,
+                    "Implementation-Date": java.time.ZonedDateTime.now(ZoneId.systemDefault()),
+                    "Specification-Version": "${-> project.ext.has("gitProps") ? project.ext.gitProps['git.commit.id'] : 'N/A'}",
+                    "Implementation-Version": project.version)
         }
     }
 
@@ -487,28 +519,25 @@ subprojects {
         }
     }
 
-    if (!Boolean.getBoolean("skipFindbugs") && projectShouldBePublished(project)) {
+    if (!Boolean.getBoolean("skipSpotbugs") && projectShouldBePublished(project)) {
         apply plugin: "com.github.spotbugs"
         apply from: rootProject.file("gradle/spotbugs.gradle")
         spotbugs {
             toolVersion = "${spotbugsVersion}"
-            sourceSets = [sourceSets.main]
-            ignoreFailures = true
-            reportsDir = file("$project.buildDir/findbugsReports")
+            showProgress = true
+            ignoreFailures = false
+            reportsDir = file("$project.buildDir/spotbugs")
             effort = "max"
             reportLevel = "low"
-            includeFilter = file("$rootProject.projectDir/style/findbugs-rules.xml")
-            excludeFilter = file("$rootProject.projectDir/style/findbugs-excludes.xml")
-            //jvmArgs = ["-Xms2g", "-Xmx4g"]
-            extraArgs = ["maxHeap 4000"]
+            includeFilter = file("$rootProject.projectDir/style/spotbugs-includes.xml")
+            excludeFilter = file("$rootProject.projectDir/style/spotbugs-excludes.xml")
+            maxHeapSize = "2g"
         }
 
         [spotbugsMain, spotbugsTest].each {
             it.reports {
                 xml.enabled = true
-                html.enabled = !rootProject.continuousIntegrationBuild
             }
-            it.pluginClasspath = project.configurations.spotbugsPlugins
             it.finalizedBy outputSpotbugsReports
         }
     }
@@ -525,10 +554,11 @@ subprojects {
         api libraries.inspektr
         api libraries.persondirectory
         api libraries.spring
+        api libraries.bytebuddy
         api libraries.jackson
         api libraries.httpclient
         api libraries.quartz
-        api libraries.hibernate
+        api libraries.hibernatevalidator
         api libraries.groovy
         api libraries.caffein
         api libraries.springcloud
@@ -537,10 +567,7 @@ subprojects {
 
         api libraries.javax
 
-        if (!Boolean.getBoolean("skipFindbugs") && projectShouldBePublished(project)) {
-            spotbugs libraries.findbugs
-            spotbugs configurations.spotbugsPlugins.dependencies
-
+        if (!Boolean.getBoolean("skipSpotbugs") && projectShouldBePublished(project)) {
             spotbugsPlugins libraries.findbugscontrib
             spotbugsPlugins libraries.findbugssec
         }
@@ -551,7 +578,7 @@ subprojects {
         }
         testImplementation libraries.tests
         testImplementation libraries.log4j
-        compileOnly libraries.findbugsannotations
+        compileOnly libraries.spotbugsannotations
     }
 }
 
@@ -604,9 +631,11 @@ task gradleHome(description: "Display GRADLE_HOME environment variable") {
     }
 }
 
-artifacts {
-    archives aggregateJavadocsIntoJar
-    archives rootSourcesJar
+if (rootProject.publishReleases || rootProject.publishSnapshots) {
+    artifacts {
+        archives aggregateJavadocsIntoJar
+        archives rootSourcesJar
+    }
 }
 
 def publishedProjects = subprojects.findAll { !it.path.contains(':docs') }
@@ -622,7 +651,7 @@ task jacocoMerge(type: JacocoMerge) {
 }
 
 task jacocoRootReport(type: JacocoReport, group: "Coverage reports") {
-    description = 'Generates an aggregate report from all subprojects'
+    description = 'Generates an aggregate report from all projects'
 
     subprojects.each {
         if (!it.path.contains(":docs")) {
@@ -635,20 +664,7 @@ task jacocoRootReport(type: JacocoReport, group: "Coverage reports") {
     additionalSourceDirs.from(files(publishedProjects.sourceSets.main.allSource.srcDirs))
     sourceDirectories.from(files(publishedProjects.sourceSets.main.allSource.srcDirs))
     classDirectories.from(files(subprojects.sourceSets.main.output)).collect {
-        fileTree(dir: it,
-                include: '**/*.class',
-                exclude: [
-                        '**/shell/cli/**',
-                        '**/shell/commands/**',
-                        '**/**ConfigurationMetadataGenerator**',
-                        '**/**Application.class',
-                        '**/**Application$**',
-                        '**/**Exception.class',
-                        '**/**Banner.class',
-                        '**/**Exception$**',
-                        '**/**Properties.class',
-                        '**/**Properties$**'
-                ])
+        fileTree(dir: it, exclude: rootProject.excludedFilesFromTestCoverage)
     }
     executionData jacocoMerge.destinationFile
     reports {
@@ -670,9 +686,9 @@ task signingKey(description: "Display CAS signing key id") {
 }
 
 task verifyRequiredJavaVersion {
-    // println "Checking current Java version ${JavaVersion.current()} for required Java version ${project.targetCompatibility}"
-    if (!JavaVersion.current().name.equalsIgnoreCase("${project.targetCompatibility}")) {
-        throw new GradleException("Current Java version ${JavaVersion.current()} does not match required Java version ${project.targetCompatibility}")
+    def requiredVersion = JavaVersion.toVersion(project.targetCompatibility)
+    if (!JavaVersion.current().isCompatibleWith(requiredVersion)) {
+        throw new GradleException("Current Java version ${JavaVersion.current()} does not match required Java version ${requiredVersion}")
     }
 }
 

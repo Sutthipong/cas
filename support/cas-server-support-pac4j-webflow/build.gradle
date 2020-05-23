@@ -20,20 +20,33 @@ dependencies {
     implementation project(":support:cas-server-support-pac4j-core-clients")
     implementation project(":support:cas-server-support-pac4j-core")
     
-    implementation libraries.pac4j
-    implementation libraries.pac4jsaml
-    implementation libraries.pac4jcore
-    implementation libraries.pac4jcas
+    api libraries.pac4joidcoauth
+    api libraries.pac4jsaml
+    api libraries.pac4jcore
+    api libraries.pac4jcas
+    api libraries.opensaml
+    api libraries.shibutiljavasupport
+    
     implementation libraries.nimbus
     implementation libraries.apachevelocity
-    implementation libraries.opensaml
     implementation libraries.dropwizard
-    implementation libraries.shibidpjavasupport
     
     testImplementation project(":core:cas-server-core-authentication-api")
+    testImplementation project(":core:cas-server-core-authentication")
+    testImplementation project(":core:cas-server-core-services")
     testImplementation project(":core:cas-server-core-tickets")
+    testImplementation project(":core:cas-server-core")
+    testImplementation project(":core:cas-server-core-util")
+    testImplementation project(":core:cas-server-core-web")
+    testImplementation project(":core:cas-server-core-logout")
+    testImplementation project(":core:cas-server-core-cookie")
+    testImplementation project(":core:cas-server-core-authentication-mfa")
+
+    testImplementation project(":support:cas-server-support-themes")
+    testImplementation project(":support:cas-server-support-thymeleaf")
     
     testImplementation project(path: ":core:cas-server-core-services", configuration: "tests")
+    testImplementation project(path: ":core:cas-server-core-tickets", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-authentication", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-authentication-api", configuration: "tests")

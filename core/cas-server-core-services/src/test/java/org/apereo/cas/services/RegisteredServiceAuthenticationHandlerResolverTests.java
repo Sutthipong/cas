@@ -11,8 +11,10 @@ import org.apereo.cas.util.CollectionUtils;
 
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.support.StaticApplicationContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,9 +31,11 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
+@Tag("Simple")
 public class RegisteredServiceAuthenticationHandlerResolverTests {
 
     private ServicesManager defaultServicesManager;
+
     private Set<AuthenticationHandler> authenticationHandlers;
 
     @BeforeEach
@@ -40,14 +44,16 @@ public class RegisteredServiceAuthenticationHandlerResolverTests {
         val list = new ArrayList<RegisteredService>();
 
         var svc = RegisteredServiceTestUtils.getRegisteredService("serviceid1");
-        svc.setRequiredHandlers(CollectionUtils.wrapHashSet("handler1", "handler2"));
+        svc.getAuthenticationPolicy().getRequiredAuthenticationHandlers().addAll(CollectionUtils.wrapHashSet("handler1", "handler2"));
         list.add(svc);
 
         svc = RegisteredServiceTestUtils.getRegisteredService("serviceid2");
-        svc.setRequiredHandlers(new HashSet<>(0));
+        svc.getAuthenticationPolicy().getRequiredAuthenticationHandlers().addAll(new HashSet<>(0));
         list.add(svc);
 
-        val dao = new InMemoryServiceRegistry(mock(ApplicationEventPublisher.class), list, new ArrayList<>());
+        val appCtx = new StaticApplicationContext();
+        appCtx.refresh();
+        val dao = new InMemoryServiceRegistry(appCtx, list, new ArrayList<>());
 
         this.defaultServicesManager = new DefaultServicesManager(dao, mock(ApplicationEventPublisher.class), new HashSet<>());
         this.defaultServicesManager.load();
@@ -62,7 +68,7 @@ public class RegisteredServiceAuthenticationHandlerResolverTests {
     @Test
     public void checkAuthenticationHandlerResolutionDefault() {
         val resolver = new RegisteredServiceAuthenticationHandlerResolver(this.defaultServicesManager,
-                new DefaultAuthenticationServiceSelectionPlan(new DefaultAuthenticationServiceSelectionStrategy()));
+            new DefaultAuthenticationServiceSelectionPlan(new DefaultAuthenticationServiceSelectionStrategy()));
         val transaction = DefaultAuthenticationTransaction.of(RegisteredServiceTestUtils.getService("serviceid1"),
             RegisteredServiceTestUtils.getCredentialsWithSameUsernameAndPassword("casuser"));
 

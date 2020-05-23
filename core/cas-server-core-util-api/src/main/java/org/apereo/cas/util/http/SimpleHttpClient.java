@@ -152,17 +152,20 @@ public class SimpleHttpClient implements HttpClient, Serializable, DisposableBea
                 EntityUtils.consumeQuietly(entity);
             }
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(e.getMessage(), e);
+            } else {
+                LOGGER.error(e.getMessage());
+            }
         }
         return false;
     }
 
-    /**
-     * Shutdown the executor service and close the http client.
-     */
     @Override
     public void destroy() {
+        IOUtils.closeQuietly(this.wrappedHttpClient);
         IOUtils.closeQuietly(this.requestExecutorService);
+        this.httpClientFactory.destroy();
     }
 
 }

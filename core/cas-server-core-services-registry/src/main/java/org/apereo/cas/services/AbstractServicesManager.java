@@ -9,6 +9,8 @@ import org.apereo.cas.support.events.service.CasRegisteredServiceSavedEvent;
 import org.apereo.cas.support.events.service.CasRegisteredServicesDeletedEvent;
 import org.apereo.cas.support.events.service.CasRegisteredServicesLoadedEvent;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -36,6 +38,7 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @RequiredArgsConstructor
+@Getter
 public abstract class AbstractServicesManager implements ServicesManager {
 
     private final ServiceRegistry serviceRegistry;
@@ -44,6 +47,7 @@ public abstract class AbstractServicesManager implements ServicesManager {
 
     private final Set<String> environments;
 
+    @Getter(value = AccessLevel.PROTECTED)
     private Map<Long, RegisteredService> services = new ConcurrentHashMap<>();
 
     private static Predicate<RegisteredService> getRegisteredServicesFilteringPredicate(final Predicate<RegisteredService>... p) {
@@ -101,7 +105,6 @@ public abstract class AbstractServicesManager implements ServicesManager {
         }
 
         val service = getCandidateServicesToMatch(serviceId)
-            .stream()
             .filter(r -> r.matches(serviceId))
             .findFirst()
             .orElse(null);
@@ -131,7 +134,6 @@ public abstract class AbstractServicesManager implements ServicesManager {
             .sorted()
             .peek(RegisteredService::initialize)
             .collect(Collectors.toList());
-
     }
 
     @Override
@@ -168,9 +170,6 @@ public abstract class AbstractServicesManager implements ServicesManager {
             .collect(Collectors.toList());
     }
 
-    /**
-     * Load services that are provided by the DAO.
-     */
     @Override
     public Collection<RegisteredService> load() {
         LOGGER.trace("Loading services from [{}]", serviceRegistry.getName());
@@ -241,7 +240,7 @@ public abstract class AbstractServicesManager implements ServicesManager {
      * @param serviceId the service id
      * @return the candidate services to match
      */
-    protected abstract Collection<RegisteredService> getCandidateServicesToMatch(String serviceId);
+    protected abstract Stream<RegisteredService> getCandidateServicesToMatch(String serviceId);
 
     /**
      * Delete internal.

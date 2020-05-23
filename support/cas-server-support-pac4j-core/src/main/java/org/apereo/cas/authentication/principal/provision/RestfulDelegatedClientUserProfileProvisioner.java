@@ -36,6 +36,7 @@ public class RestfulDelegatedClientUserProfileProvisioner extends BaseDelegatedC
             headers.put("profileId", profile.getId());
             headers.put("profileTypedId", profile.getTypedId());
             headers.put("profileAttributes", profile.getAttributes());
+            headers.put("authenticationAttributes", profile.getAuthenticationAttributes());
             headers.put("clientName", client.getName());
 
             response = HttpUtils.execute(restProperties.getUrl(), HttpMethod.GET.name(),
@@ -48,7 +49,11 @@ public class RestfulDelegatedClientUserProfileProvisioner extends BaseDelegatedC
                 }
             }
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.error(e.getMessage(), e);
+            } else {
+                LOGGER.error(e.getMessage());
+            }
         } finally {
             HttpUtils.close(response);
         }

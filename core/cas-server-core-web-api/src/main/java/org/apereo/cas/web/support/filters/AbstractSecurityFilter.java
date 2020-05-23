@@ -18,7 +18,7 @@ public abstract class AbstractSecurityFilter {
      * The name of the optional Filter init-param specifying that configuration
      * errors should be fatal.
      */
-    public static final String FAIL_SAFE = "failSafe";
+    public static final String THROW_ON_ERROR = "throwOnError";
 
     /**
      * Throw fatal errors if set.
@@ -34,7 +34,11 @@ public abstract class AbstractSecurityFilter {
     }
 
     protected static void logException(final Exception e) {
-        LOGGER.error(e.getMessage(), e);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.error(e.getMessage(), e);
+        } else {
+            LOGGER.error(e.getMessage());
+        }
         if (isThrowOnErrors()) {
             throw new RuntimeException(e);
         }

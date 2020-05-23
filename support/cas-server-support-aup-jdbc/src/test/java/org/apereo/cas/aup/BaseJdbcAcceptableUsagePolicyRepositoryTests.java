@@ -20,7 +20,6 @@ import org.apereo.cas.config.CasDefaultServiceTicketIdGeneratorsConfiguration;
 import org.apereo.cas.config.CasPersonDirectoryTestConfiguration;
 import org.apereo.cas.config.CasRegisteredServicesTestConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
-import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.web.config.CasCookieConfiguration;
@@ -42,7 +41,6 @@ import org.springframework.webflow.context.servlet.ServletExternalContext;
 import org.springframework.webflow.test.MockRequestContext;
 
 import javax.sql.DataSource;
-
 import java.util.List;
 import java.util.Map;
 
@@ -92,18 +90,11 @@ public abstract class BaseJdbcAcceptableUsagePolicyRepositoryTests extends BaseA
     @Qualifier("defaultTicketRegistrySupport")
     protected ObjectProvider<TicketRegistrySupport> ticketRegistrySupport;
 
-    @Autowired
-    protected CasConfigurationProperties casProperties;
-
-    @Override
-    public boolean hasLiveUpdates() {
-        return false;
-    }
-
     protected String determinePrincipalId(final String actualPrincipalId, final Map<String, List<Object>> profileAttributes) {
         val aupProperties = casProperties.getAcceptableUsagePolicy();
-        val jdbcAupRepository = new JdbcAcceptableUsagePolicyRepository(ticketRegistrySupport.getObject(),
-            aupProperties.getAupAttributeName(), acceptableUsagePolicyDataSource.getObject(), aupProperties);
+        val jdbcAupRepository = new JdbcAcceptableUsagePolicyRepository(
+            ticketRegistrySupport.getObject(),
+            aupProperties, acceptableUsagePolicyDataSource.getObject());
 
         val context = new MockRequestContext();
         val request = new MockHttpServletRequest();
@@ -119,5 +110,10 @@ public abstract class BaseJdbcAcceptableUsagePolicyRepositoryTests extends BaseA
     @Override
     public AcceptableUsagePolicyRepository getAcceptableUsagePolicyRepository() {
         return acceptableUsagePolicyRepository.getObject();
+    }
+
+    @Override
+    public boolean hasLiveUpdates() {
+        return false;
     }
 }

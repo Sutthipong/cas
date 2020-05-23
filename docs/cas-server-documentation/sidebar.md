@@ -31,6 +31,7 @@ layout: null
     *   [Reloading Changes](/$version/configuration/Configuration-Management-Reload.html)
     *   [Clustered Deployments](/$version/configuration/Configuration-Management-Clustered.html)
     *   [Configuration Discovery](/$version/configuration/Configuration-Discovery.html)
+    *   [Configuration Expressions](/$version/configuration/Configuration-Spring-Expressions.html)
 
 * [Authentication](#casauthentication)
     *   [Overview](/$version/installation/Configuring-Authentication-Components.html)
@@ -152,7 +153,7 @@ layout: null
     *   [HTTP Security Headers](/$version/services/Configuring-Service-Http-Security-Headers.html)
     *   [Contacts & Owners](/$version/services/Configuring-Service-Contacts.html)
     *   [Expiration Policy](/$version/services/Configuring-Service-Expiration-Policy.html)
-    *   [Required Authentication](/$version/services/Configuring-Service-Required-AuthN.html)
+    *   [Authentication Policy](/$version/services/Configuring-Service-AuthN-Policy.html)
     *   [Environments](/$version/services/Configuring-Service-Environments.html)
     *   [Replication](/$version/services/Configuring-Service-Replication.html)
     *   [Storage](#persistencesvcreg)

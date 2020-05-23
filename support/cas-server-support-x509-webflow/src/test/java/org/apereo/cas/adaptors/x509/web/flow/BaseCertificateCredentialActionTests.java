@@ -3,6 +3,7 @@ package org.apereo.cas.adaptors.x509.web.flow;
 import org.apereo.cas.AbstractCentralAuthenticationServiceTests;
 import org.apereo.cas.adaptors.x509.authentication.CasX509Certificate;
 import org.apereo.cas.adaptors.x509.config.X509AuthenticationConfiguration;
+import org.apereo.cas.adaptors.x509.config.X509CertificateExtractorConfiguration;
 import org.apereo.cas.config.CasAuthenticationEventExecutionPlanTestConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationHandlersConfiguration;
@@ -28,7 +29,6 @@ import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguratio
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.validation.config.CasCoreValidationConfiguration;
 import org.apereo.cas.web.config.CasCookieConfiguration;
-import org.apereo.cas.web.extractcert.X509CertificateExtractorConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasWebflowContextConfiguration;
@@ -95,13 +95,11 @@ import org.springframework.webflow.execution.Action;
         "cas.authn.x509.principalType=SERIAL_NO_DN",
         "cas.authn.policy.any.tryAll=true",
         "cas.authn.x509.crlFetcher=ldap",
-        "cas.authn.x509.ldap.ldapUrl=ldap://localhost:1389",
+        "cas.authn.x509.ldap.ldap-url=ldap://localhost:1389",
         "cas.authn.x509.ldap.baseDn=ou=people,dc=example,dc=org",
         "cas.authn.x509.ldap.searchFilter=cn=X509",
         "cas.authn.x509.ldap.bindDn=cn=Directory Manager,dc=example,dc=org",
-        "cas.authn.x509.ldap.bindCredential=Password",
-        "spring.mail.host=localhost",
-        "spring.mail.port=25000"
+        "cas.authn.x509.ldap.bindCredential=Password"
     })
 public abstract class BaseCertificateCredentialActionTests {
     public static final CasX509Certificate VALID_CERTIFICATE = new CasX509Certificate(true);

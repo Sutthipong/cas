@@ -1,6 +1,7 @@
 package org.apereo.cas.mock;
 
 import org.apereo.cas.authentication.Authentication;
+import org.apereo.cas.authentication.AuthenticationHandler;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.DefaultAuthenticationBuilder;
@@ -49,21 +50,42 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     private final Authentication authentication;
 
     private final ZonedDateTime created;
+
     private final Map<String, Service> services = new HashMap<>();
+
     private final Map<String, Service> proxyGrantingTickets = new HashMap<>();
+
     private int usageCount;
+
     private boolean expired;
 
     @Setter
     private ExpirationPolicy expirationPolicy = new TicketGrantingTicketExpirationPolicy(100, 100);
 
-    public MockTicketGrantingTicket(final String principal, final Credential c, final Map<String, List<Object>> attributes) {
+    public MockTicketGrantingTicket(final String principalId, final Credential c,
+                                    final Map<String, List<Object>> principalAttributes) {
+        this(principalId, c, principalAttributes, Map.of());
+    }
+
+    public MockTicketGrantingTicket(final String principalId, final Map<String, List<Object>> principalAttributes,
+                                    final Map<String, List<Object>> authnAttributes) {
+        this(principalId,
+            CoreAuthenticationTestUtils.getCredentialsWithDifferentUsernameAndPassword("uid", "password"),
+            principalAttributes, authnAttributes);
+    }
+    public MockTicketGrantingTicket(final String principalId, final Credential c, final Map<String, List<Object>> principalAttributes,
+                                    final Map<String, List<Object>> authnAttributes) {
         id = ID_GENERATOR.getNewTicketId("TGT");
         val metaData = new BasicCredentialMetaData(c);
-        authentication = new DefaultAuthenticationBuilder(PrincipalFactoryUtils.newPrincipalFactory().createPrincipal(principal, attributes))
+        val principal = PrincipalFactoryUtils.newPrincipalFactory().createPrincipal(principalId, principalAttributes);
+        authentication = new DefaultAuthenticationBuilder(principal)
             .addCredential(metaData)
+            .setAttributes(authnAttributes)
+            .addAttribute(AuthenticationHandler.SUCCESSFUL_AUTHENTICATION_HANDLERS,
+                List.of(SimpleTestUsernamePasswordAuthenticationHandler.class.getSimpleName()))
             .addSuccess(SimpleTestUsernamePasswordAuthenticationHandler.class.getName(),
-                new DefaultAuthenticationHandlerExecutionResult(new SimpleTestUsernamePasswordAuthenticationHandler(), metaData)).build();
+                new DefaultAuthenticationHandlerExecutionResult(new SimpleTestUsernamePasswordAuthenticationHandler(), metaData))
+            .build();
         created = ZonedDateTime.now(ZoneOffset.UTC);
     }
 
@@ -71,13 +93,10 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
         this(principal, new HashMap<>());
     }
 
-    public MockTicketGrantingTicket(final String principal, final Map attributes) {
-        this(principal, CoreAuthenticationTestUtils.getCredentialsWithDifferentUsernameAndPassword("uid", "password"), attributes);
-    }
-
-    @Override
-    public void update() {
-        usageCount++;
+    public MockTicketGrantingTicket(final String principal, final Map principalAttributes) {
+        this(principal,
+            CoreAuthenticationTestUtils.getCredentialsWithDifferentUsernameAndPassword("uid", "password"),
+            principalAttributes);
     }
 
     public ServiceTicket grantServiceTicket(final Service service) {
@@ -95,8 +114,7 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     }
 
     @Override
-    public Service getProxiedBy() {
-        return null;
+    public void removeAllServices() {
     }
 
     @Override
@@ -115,6 +133,11 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     }
 
     @Override
+    public Service getProxiedBy() {
+        return null;
+    }
+
+    @Override
     public TicketGrantingTicket getTicketGrantingTicket() {
         return this;
     }
@@ -130,6 +153,21 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     }
 
     @Override
+    public ExpirationPolicy getExpirationPolicy() {
+        return this.expirationPolicy;
+    }
+
+    @Override
+    public String getPrefix() {
+        return TicketGrantingTicket.PREFIX;
+    }
+
+    @Override
+    public void markTicketExpired() {
+        expired = true;
+    }
+
+    @Override
     public ZonedDateTime getLastTimeUsed() {
         return created;
     }
@@ -140,26 +178,12 @@ public class MockTicketGrantingTicket implements TicketGrantingTicket, TicketSta
     }
 
     @Override
-    public ExpirationPolicy getExpirationPolicy() {
-        return this.expirationPolicy;
-    }
-
-    @Override
-    public void removeAllServices() {
-    }
-
-    @Override
-    public void markTicketExpired() {
-        expired = true;
+    public void update() {
+        usageCount++;
     }
 
     @Override
     public int compareTo(final Ticket o) {
         return this.id.compareTo(o.getId());
-    }
-
-    @Override
-    public String getPrefix() {
-        return TicketGrantingTicket.PREFIX;
     }
 }

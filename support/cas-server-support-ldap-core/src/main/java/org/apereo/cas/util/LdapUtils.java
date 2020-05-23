@@ -67,9 +67,7 @@ import org.ldaptive.handler.MergeAttributeEntryHandler;
 import org.ldaptive.handler.RecursiveResultHandler;
 import org.ldaptive.handler.SearchResultHandler;
 import org.ldaptive.pool.BindConnectionPassivator;
-import org.ldaptive.pool.CloseConnectionPassivator;
 import org.ldaptive.pool.IdlePruneStrategy;
-import org.ldaptive.pool.OpenConnectionActivator;
 import org.ldaptive.referral.FollowSearchReferralHandler;
 import org.ldaptive.sasl.Mechanism;
 import org.ldaptive.sasl.QualityOfProtection;
@@ -284,7 +282,8 @@ public class LdapUtils {
                                                          final AbstractLdapProperties.LdapType type) {
         try {
             val connConfig = connectionFactory.getConnectionConfig();
-            if (connConfig.getUseStartTLS() || (connConfig.getLdapUrl() != null && !connConfig.getLdapUrl().toLowerCase().contains("ldaps://"))) {
+            if (connConfig.getUseStartTLS()
+                || (connConfig.getLdapUrl() != null && !connConfig.getLdapUrl().toLowerCase().contains("ldaps://"))) {
                 LOGGER.warn("Executing password modification op under a non-secure LDAP connection; "
                         + "To modify password attributes, the connection to the LDAP server {} be secured and/or encrypted.",
                     type == AbstractLdapProperties.LdapType.AD ? "MUST" : "SHOULD");
@@ -336,6 +335,7 @@ public class LdapUtils {
                 .map(entry -> {
                     val values = entry.getValue().toArray(ArrayUtils.EMPTY_STRING_ARRAY);
                     val attr = new LdapAttribute(entry.getKey(), values);
+                    LOGGER.debug("Constructed new attribute [{}]", attr);
                     return new AttributeModification(AttributeModification.Type.REPLACE, attr);
                 })
                 .toArray(AttributeModification[]::new);
@@ -630,7 +630,7 @@ public class LdapUtils {
         if (StringUtils.isBlank(l.getSearchFilter())) {
             throw new IllegalArgumentException("User filter cannot be empty/blank for authenticated/anonymous authentication");
         }
-        val connectionFactoryForSearch = newLdaptivePooledConnectionFactory(l);
+        val connectionFactoryForSearch = newLdaptiveConnectionFactory(l);
         val resolver = new SearchDnResolver();
         resolver.setBaseDn(l.getBaseDn());
         resolver.setSubtreeSearch(l.isSubtreeSearch());
@@ -647,11 +647,11 @@ public class LdapUtils {
         }
 
         val auth = StringUtils.isBlank(l.getPrincipalAttributePassword())
-            ? new Authenticator(resolver, getPooledBindAuthenticationHandler(newLdaptivePooledConnectionFactory(l)))
-            : new Authenticator(resolver, getPooledCompareAuthenticationHandler(l, newLdaptivePooledConnectionFactory(l)));
+            ? new Authenticator(resolver, getBindAuthenticationHandler(newLdaptiveConnectionFactory(l)))
+            : new Authenticator(resolver, getCompareAuthenticationHandler(l, newLdaptiveConnectionFactory(l)));
 
         if (l.isEnhanceWithEntryResolver()) {
-            auth.setEntryResolver(newLdaptiveSearchEntryResolver(l, newLdaptivePooledConnectionFactory(l)));
+            auth.setEntryResolver(newLdaptiveSearchEntryResolver(l, newLdaptiveConnectionFactory(l)));
         }
         return auth;
     }
@@ -672,22 +672,22 @@ public class LdapUtils {
 
     private static Authenticator getAuthenticatorViaDnFormat(final AbstractLdapAuthenticationProperties l) {
         val resolver = new FormatDnResolver(l.getDnFormat());
-        val authenticator = new Authenticator(resolver, getPooledBindAuthenticationHandler(newLdaptivePooledConnectionFactory(l)));
+        val authenticator = new Authenticator(resolver, getBindAuthenticationHandler(newLdaptiveConnectionFactory(l)));
 
         if (l.isEnhanceWithEntryResolver()) {
-            authenticator.setEntryResolver(newLdaptiveSearchEntryResolver(l, newLdaptivePooledConnectionFactory(l)));
+            authenticator.setEntryResolver(newLdaptiveSearchEntryResolver(l, newLdaptiveConnectionFactory(l)));
         }
         return authenticator;
     }
 
-    private static SimpleBindAuthenticationHandler getPooledBindAuthenticationHandler(final PooledConnectionFactory factory) {
+    private static SimpleBindAuthenticationHandler getBindAuthenticationHandler(final ConnectionFactory factory) {
         val handler = new SimpleBindAuthenticationHandler(factory);
         handler.setAuthenticationControls(new PasswordPolicyControl());
         return handler;
     }
 
-    private static CompareAuthenticationHandler getPooledCompareAuthenticationHandler(final AbstractLdapAuthenticationProperties l,
-                                                                                      final PooledConnectionFactory factory) {
+    private static CompareAuthenticationHandler getCompareAuthenticationHandler(final AbstractLdapAuthenticationProperties l,
+                                                                                final ConnectionFactory factory) {
         val handler = new CompareAuthenticationHandler(factory);
         handler.setPasswordAttribute(l.getPrincipalAttributePassword());
         return handler;
@@ -752,11 +752,6 @@ public class LdapUtils {
             val pass =
                 AbstractLdapProperties.LdapConnectionPoolPassivator.valueOf(l.getPoolPassivator().toUpperCase());
             switch (pass) {
-                case CLOSE:
-                    pooledCf.setPassivator(new CloseConnectionPassivator());
-                    pooledCf.setActivator(new OpenConnectionActivator());
-                    LOGGER.debug("Created [{}] passivator for [{}]", l.getPoolPassivator(), l.getLdapUrl());
-                    break;
                 case BIND:
                     if (StringUtils.isNotBlank(l.getBindDn()) && StringUtils.isNoneBlank(l.getBindCredential())) {
                         val bindRequest = new SimpleBindRequest(l.getBindDn(), l.getBindCredential());
@@ -892,6 +887,7 @@ public class LdapUtils {
     }
 
     private static SaslConfig getSaslConfigFrom(final AbstractLdapProperties l) {
+
         if (Mechanism.valueOf(l.getSaslMechanism()) == Mechanism.DIGEST_MD5) {
             val sc = new SaslConfig();
             sc.setMechanism(Mechanism.DIGEST_MD5);
@@ -915,12 +911,22 @@ public class LdapUtils {
     }
 
     /**
-     * New connection factory connection factory.
+     * Returns a pooled connection factory or default connection factory based on {@link AbstractLdapProperties#isDisablePooling()}.
+     *
+     * @param l ldap properties
+     * @return the connection factory
+     */
+    public static ConnectionFactory newLdaptiveConnectionFactory(final AbstractLdapProperties l) {
+        return l.isDisablePooling() ? newLdaptiveDefaultConnectionFactory(l) : newLdaptivePooledConnectionFactory(l);
+    }
+
+    /**
+     * New default connection factory.
      *
      * @param l the l
      * @return the connection factory
      */
-    public static DefaultConnectionFactory newLdaptiveConnectionFactory(final AbstractLdapProperties l) {
+    private static DefaultConnectionFactory newLdaptiveDefaultConnectionFactory(final AbstractLdapProperties l) {
         LOGGER.debug("Creating LDAP connection factory for [{}]", l.getLdapUrl());
         val cc = newLdaptiveConnectionConfig(l);
         val bindCf = new DefaultConnectionFactory(cc);
@@ -936,7 +942,7 @@ public class LdapUtils {
      * @return the entry resolver
      */
     public static EntryResolver newLdaptiveSearchEntryResolver(final AbstractLdapAuthenticationProperties l,
-                                                               final PooledConnectionFactory factory) {
+                                                               final ConnectionFactory factory) {
         if (StringUtils.isBlank(l.getBaseDn())) {
             throw new IllegalArgumentException("To create a search entry resolver, base dn cannot be empty/blank ");
         }
@@ -1000,7 +1006,9 @@ public class LdapUtils {
                     break;
                 case RECURSIVE_ENTRY:
                     val recursive = h.getRecursive();
-                    searchResultHandlers.add(new RecursiveResultHandler(recursive.getSearchAttribute(), recursive.getMergeAttributes().toArray(ArrayUtils.EMPTY_STRING_ARRAY)));
+                    searchResultHandlers.add(
+                        new RecursiveResultHandler(recursive.getSearchAttribute(),
+                            recursive.getMergeAttributes().toArray(ArrayUtils.EMPTY_STRING_ARRAY)));
                     break;
                 default:
                     break;

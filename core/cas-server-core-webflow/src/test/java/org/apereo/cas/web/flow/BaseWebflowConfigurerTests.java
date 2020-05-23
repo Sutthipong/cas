@@ -8,6 +8,8 @@ import org.apereo.cas.config.CasCoreAuthenticationPrincipalConfiguration;
 import org.apereo.cas.config.CasCoreAuthenticationSupportConfiguration;
 import org.apereo.cas.config.CasCoreConfiguration;
 import org.apereo.cas.config.CasCoreHttpConfiguration;
+import org.apereo.cas.config.CasCoreMultifactorAuthenticationAuditConfiguration;
+import org.apereo.cas.config.CasCoreMultifactorAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreServicesAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreTicketCatalogConfiguration;
@@ -22,11 +24,11 @@ import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguratio
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
+import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasWebflowContextConfiguration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.annotation.Import;
@@ -42,9 +44,7 @@ import org.springframework.webflow.definition.registry.FlowDefinitionRegistry;
 @SpringBootTest(classes = BaseWebflowConfigurerTests.SharedTestConfiguration.class)
 @TestPropertySource(properties = {
     "cas.webflow.crypto.encryption.key=qLhvLuaobvfzMmbo9U_bYA",
-    "cas.webflow.crypto.signing.key=oZeAR5pEXsolruu4OQYsQKxf-FCvFzSsKlsVaKmfIl6pNzoPm6zPW94NRS1af7vT-0bb3DpPBeksvBXjloEsiA",
-    "spring.mail.host=localhost",
-    "spring.mail.port=25000"
+    "cas.webflow.crypto.signing.key=oZeAR5pEXsolruu4OQYsQKxf-FCvFzSsKlsVaKmfIl6pNzoPm6zPW94NRS1af7vT-0bb3DpPBeksvBXjloEsiA"
 })
 public class BaseWebflowConfigurerTests {
     @Autowired
@@ -58,7 +58,7 @@ public class BaseWebflowConfigurerTests {
     @Autowired
     @Qualifier("logoutFlowRegistry")
     protected FlowDefinitionRegistry logoutFlowDefinitionRegistry;
-    
+
     @Import({
         RefreshAutoConfiguration.class,
         CasCoreAuthenticationConfiguration.class,
@@ -82,7 +82,9 @@ public class BaseWebflowConfigurerTests {
         CasCookieConfiguration.class,
         CasPersonDirectoryTestConfiguration.class,
         CasCoreConfiguration.class,
-        MailSenderAutoConfiguration.class,
+        CasCoreMultifactorAuthenticationConfiguration.class,
+        CasCoreMultifactorAuthenticationAuditConfiguration.class,
+        CasMultifactorAuthenticationWebflowConfiguration.class,
         CasWebApplicationServiceFactoryConfiguration.class,
         CasCoreUtilConfiguration.class
     })

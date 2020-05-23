@@ -27,7 +27,7 @@ import org.apereo.cas.couchdb.core.CouchDbConnectorFactory;
 import org.apereo.cas.couchdb.gauth.credential.GoogleAuthenticatorAccountCouchDbRepository;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.otp.repository.credentials.OneTimeTokenCredentialRepository;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
+import org.apereo.cas.util.junit.EnabledIfPortOpen;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
@@ -86,14 +86,14 @@ import org.springframework.scheduling.annotation.EnableScheduling;
     CasCoreWebConfiguration.class},
     properties = {
         "cas.authn.mfa.gauth.crypto.enabled=false",
-        "cas.authn.mfa.gauth.couchDb.username=cas",
-        "cas.authn.mfa.gauth.couchDb.dbName=gauth_credential",
+        "cas.authn.mfa.gauth.couch-db.username=cas",
+        "cas.authn.mfa.gauth.couch-db.dbName=gauth_credential",
         "cas.authn.mfa.gauth.couchdb.password=password"
     })
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableScheduling
 @Getter
-@EnabledIfContinuousIntegration
+@EnabledIfPortOpen(port = 5984)
 public class CouchDbGoogleAuthenticatorTokenCredentialRepositoryTests extends BaseOneTimeTokenCredentialRepositoryTests {
 
     @Autowired
@@ -109,13 +109,17 @@ public class CouchDbGoogleAuthenticatorTokenCredentialRepositoryTests extends Ba
     private GoogleAuthenticatorAccountCouchDbRepository couchDbRepository;
 
     @BeforeEach
-    public void setUp() {
+    @Override
+    public void initialize() {
         couchDbFactory.getCouchDbInstance().createDatabaseIfNotExists(couchDbFactory.getCouchDbConnector().getDatabaseName());
         couchDbRepository.initStandardDesignDocument();
+        super.initialize();
     }
 
     @AfterEach
-    public void tearDown() {
+    @Override
+    public void afterEach() {
+        super.afterEach();
         couchDbFactory.getCouchDbInstance().deleteDatabase(couchDbFactory.getCouchDbConnector().getDatabaseName());
     }
 }

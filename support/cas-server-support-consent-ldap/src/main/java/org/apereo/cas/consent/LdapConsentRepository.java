@@ -12,10 +12,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
+import org.hjson.JsonValue;
 import org.ldaptive.ConnectionFactory;
 import org.ldaptive.LdapAttribute;
 import org.ldaptive.LdapEntry;
 import org.ldaptive.LdapException;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class LdapConsentRepository implements ConsentRepository {
+public class LdapConsentRepository implements ConsentRepository, DisposableBean {
     private static final long serialVersionUID = 8561763114482490L;
 
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
@@ -45,7 +47,7 @@ public class LdapConsentRepository implements ConsentRepository {
     private static ConsentDecision mapFromJson(final String json) {
         try {
             LOGGER.trace("Mapping JSON value [{}] to consent object", json);
-            return MAPPER.readValue(json, ConsentDecision.class);
+            return MAPPER.readValue(JsonValue.readHjson(json).toString(), ConsentDecision.class);
         } catch (final IOException e) {
             LOGGER.error(e.getMessage(), e);
         }
@@ -257,5 +259,10 @@ public class LdapConsentRepository implements ConsentRepository {
         }
         LOGGER.debug("Unable to read consent entries from LDAP via filter [{}]", filter);
         return new HashSet<>(0);
+    }
+
+    @Override
+    public void destroy() {
+        connectionFactory.close();
     }
 }

@@ -5,7 +5,6 @@ import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
 import org.apereo.cas.config.LdapPasswordManagementConfiguration;
 import org.apereo.cas.pm.config.PasswordManagementConfiguration;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
 import lombok.SneakyThrows;
@@ -41,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
     CasCoreUtilConfiguration.class
 }, properties = {
     "cas.authn.pm.reset.sms.attributeName=telephoneNumber",
-    "cas.authn.pm.ldap[0].ldapUrl=ldaps://localhost:10636",
+    "cas.authn.pm.ldap[0].ldap-url=ldaps://localhost:10636",
     "cas.authn.pm.ldap[0].bindDn=CN=admin,CN=Users,DC=cas,DC=example,DC=org",
     "cas.authn.pm.ldap[0].bindCredential=P@ssw0rd",
     "cas.authn.pm.ldap[0].baseDn=CN=Users,DC=cas,DC=example,DC=org",
@@ -56,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.*;
     "cas.authn.pm.ldap[0].hostnameVerifier=DEFAULT"
 })
 @DirtiesContext
-@EnabledIfContinuousIntegration
 @EnabledIfPortOpen(port = 10636)
 public class ADPasswordManagementServiceTests {
 

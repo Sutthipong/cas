@@ -47,6 +47,7 @@ import org.apereo.cas.util.crypto.CipherExecutor;
 
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.springframework.context.ApplicationEventPublisher;
@@ -70,6 +71,7 @@ import static org.mockito.Mockito.*;
  * @author Dmitriy Kopylenko
  * @since 3.0.0
  */
+@Tag("Simple")
 public class DefaultCentralAuthenticationServiceMockitoTests extends BaseCasCoreTests {
     private static final String TGT_ID = "tgt-id";
     private static final String TGT2_ID = "tgt2-id";
@@ -190,7 +192,7 @@ public class DefaultCentralAuthenticationServiceMockitoTests extends BaseCasCore
         val factory = new DefaultTicketFactory();
         factory.addTicketFactory(ProxyGrantingTicket.class,
             new DefaultProxyGrantingTicketFactory(null,
-                null, CipherExecutor.noOpOfStringToString()));
+                null, CipherExecutor.noOpOfStringToString(), mock(ServicesManager.class)));
         factory.addTicketFactory(TicketGrantingTicket.class,
             new DefaultTicketGrantingTicketFactory(null,
                 null, CipherExecutor.noOpOfSerializableToString()));

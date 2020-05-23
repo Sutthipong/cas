@@ -41,10 +41,6 @@ import java.util.Map;
 @DiscriminatorColumn(name = "TYPE")
 @DiscriminatorValue(TransientSessionTicket.PREFIX)
 public class TransientSessionTicketImpl extends AbstractTicket implements TransientSessionTicket {
-
-    /**
-     * The constant serialVersionUID.
-     */
     private static final long serialVersionUID = 7839186396717950243L;
 
     /**
@@ -106,7 +102,7 @@ public class TransientSessionTicketImpl extends AbstractTicket implements Transi
         if (contains(name)) {
             return clazz.cast(this.properties.getOrDefault(name, defaultValue));
         }
-        return null;
+        return defaultValue;
     }
 }
 

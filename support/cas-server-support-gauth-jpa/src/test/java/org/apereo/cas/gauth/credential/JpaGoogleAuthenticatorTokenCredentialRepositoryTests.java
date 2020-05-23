@@ -17,6 +17,7 @@ import org.apereo.cas.config.CasCoreTicketIdGeneratorsConfiguration;
 import org.apereo.cas.config.CasCoreTicketsConfiguration;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
 import org.apereo.cas.config.CasCoreWebConfiguration;
+import org.apereo.cas.config.CasHibernateJpaConfiguration;
 import org.apereo.cas.config.CasPersonDirectoryConfiguration;
 import org.apereo.cas.config.GoogleAuthenticatorJpaConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
@@ -42,6 +43,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -54,6 +56,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringBootTest(classes = {
     GoogleAuthenticatorJpaConfiguration.class,
     JpaGoogleAuthenticatorTokenCredentialRepositoryTests.JpaTestConfiguration.class,
+    CasHibernateJpaConfiguration.class,
     GoogleAuthenticatorAuthenticationEventExecutionPlanConfiguration.class,
     GoogleAuthenticatorAuthenticationMultifactorProviderBypassConfiguration.class,
     CasCoreTicketsConfiguration.class,
@@ -83,7 +86,10 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     AopAutoConfiguration.class,
     RefreshAutoConfiguration.class
 },
-    properties = "cas.authn.mfa.gauth.crypto.enabled=false")
+    properties = {
+        "cas.jdbc.showSql=true",
+        "cas.authn.mfa.gauth.crypto.enabled=false"
+    })
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableScheduling
@@ -100,6 +106,7 @@ public class JpaGoogleAuthenticatorTokenCredentialRepositoryTests extends BaseOn
     }
 
     @TestConfiguration("JpaTestConfiguration")
+    @Lazy(false)
     public static class JpaTestConfiguration implements InitializingBean {
         @Autowired
         protected ApplicationContext applicationContext;

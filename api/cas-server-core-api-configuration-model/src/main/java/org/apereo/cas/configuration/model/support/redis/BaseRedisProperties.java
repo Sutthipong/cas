@@ -5,6 +5,7 @@ import org.apereo.cas.configuration.support.RequiresModule;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.List;
 @Getter
 @Setter
 @RequiresModule(name = "cas-server-support-redis-core")
+@Accessors(chain = true)
 public class BaseRedisProperties implements Serializable {
 
     private static final long serialVersionUID = -2600996981339638782L;
@@ -55,12 +57,12 @@ public class BaseRedisProperties implements Serializable {
     /**
      * Redis connection pool settings.
      */
-    private Pool pool;
+    private Pool pool = new Pool();
 
     /**
      * Redis Sentinel settings.
      */
-    private Sentinel sentinel;
+    private Sentinel sentinel = new Sentinel();
 
     /**
      * Whether or not to use SSL for connection factory.
@@ -88,6 +90,8 @@ public class BaseRedisProperties implements Serializable {
      */
     @Getter
     @Setter
+    @Accessors(chain = true)
+    @RequiresModule(name = "cas-server-support-redis-core")
     public static class Pool implements Serializable {
 
         private static final long serialVersionUID = 8534823157764550894L;
@@ -195,6 +199,11 @@ public class BaseRedisProperties implements Serializable {
          * to block indefinitely.
          */
         private int maxWait = -1;
+
+        /**
+         * Enable the pooling configuration.
+         */
+        private boolean enabled;
     }
 
     /**
@@ -202,6 +211,8 @@ public class BaseRedisProperties implements Serializable {
      */
     @Getter
     @Setter
+    @Accessors(chain = true)
+    @RequiresModule(name = "cas-server-support-redis-core")
     public static class Sentinel implements Serializable {
 
         private static final long serialVersionUID = 5434823157764550831L;

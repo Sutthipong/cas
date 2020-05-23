@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apereo.inspektr.audit.AuditActionContext;
+import org.hjson.JsonValue;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -43,7 +44,7 @@ public class RestAuditTrailManager extends AbstractAuditTrailManager {
         HttpResponse response = null;
         try {
             val auditJson = serializer.toString(audit);
-            LOGGER.debug("Sending audit action context to REST endpoint [{}]", properties.getUrl());
+            LOGGER.trace("Sending audit action context to REST endpoint [{}]", properties.getUrl());
             response = HttpUtils.executePost(properties.getUrl(), properties.getBasicAuthUsername(), properties.getBasicAuthPassword(), auditJson);
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -67,7 +68,7 @@ public class RestAuditTrailManager extends AbstractAuditTrailManager {
                 val result = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
                 final TypeReference<Set<AuditActionContext>> values = new TypeReference<>() {
                 };
-                return MAPPER.readValue(result, values);
+                return MAPPER.readValue(JsonValue.readHjson(result).toString(), values);
             }
         } catch (final Exception e) {
             LOGGER.error(e.getMessage(), e);

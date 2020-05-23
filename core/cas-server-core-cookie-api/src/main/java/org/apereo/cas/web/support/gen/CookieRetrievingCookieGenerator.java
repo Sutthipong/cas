@@ -4,6 +4,7 @@ import org.apereo.cas.authentication.RememberMeCredential;
 import org.apereo.cas.web.cookie.CasCookieBuilder;
 import org.apereo.cas.web.cookie.CookieGenerationContext;
 import org.apereo.cas.web.cookie.CookieValueManager;
+import org.apereo.cas.web.support.InvalidCookieException;
 import org.apereo.cas.web.support.WebUtils;
 import org.apereo.cas.web.support.mgmr.NoOpCookieValueManager;
 
@@ -65,7 +66,7 @@ public class CookieRetrievingCookieGenerator extends CookieGenerator implements 
      * Is remember me authentication ?
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static Boolean isRememberMeAuthentication(final RequestContext requestContext) {
         if (isRememberMeProvidedInRequest(requestContext)) {
@@ -111,7 +112,7 @@ public class CookieRetrievingCookieGenerator extends CookieGenerator implements 
     @Override
     protected Cookie createCookie(final String cookieValue) {
         val c = super.createCookie(cookieValue);
-        c.setComment("CAS Cookie");
+        c.setComment(cookieGenerationContext.getComment());
         return c;
     }
 
@@ -124,7 +125,7 @@ public class CookieRetrievingCookieGenerator extends CookieGenerator implements 
         if (rememberMe) {
             LOGGER.trace("Creating CAS cookie [{}] for remember-me authentication", getCookieName());
             cookie.setMaxAge(cookieGenerationContext.getRememberMeMaxAge());
-            cookie.setComment("CAS Cookie w/ Remember-Me");
+            cookie.setComment(String.format("%s Remember-Me", cookieGenerationContext.getComment()));
         } else {
             LOGGER.trace("Creating CAS cookie [{}]", getCookieName());
             if (getCookieMaxAge() != null) {
@@ -163,8 +164,14 @@ public class CookieRetrievingCookieGenerator extends CookieGenerator implements 
             return Optional.ofNullable(cookie)
                 .map(ck -> this.casCookieValueManager.obtainCookieValue(ck, request))
                 .orElse(null);
+        } catch (final InvalidCookieException e) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.warn(e.getMessage(), e);
+            } else {
+                LOGGER.warn(e.getMessage());
+            }
         } catch (final Exception e) {
-            LOGGER.debug(e.getMessage(), e);
+            LOGGER.warn(e.getMessage(), e);
         }
         return null;
     }

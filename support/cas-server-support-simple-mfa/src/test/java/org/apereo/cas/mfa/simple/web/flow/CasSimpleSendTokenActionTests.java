@@ -9,7 +9,6 @@ import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.MockSmsSender;
 import org.apereo.cas.util.io.SmsSender;
-import org.apereo.cas.util.junit.EnabledIfContinuousIntegration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.support.WebUtils;
@@ -24,6 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
@@ -55,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.*;
         "cas.authn.mfa.simple.sms.from=347746512"
     })
 @EnabledIfPortOpen(port = 25000)
-@EnabledIfContinuousIntegration
 @Tag("Mail")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 public class CasSimpleSendTokenActionTests {
@@ -115,6 +114,7 @@ public class CasSimpleSendTokenActionTests {
     }
 
     @TestConfiguration
+    @Lazy(false)
     public static class CasSimpleMultifactorTestConfiguration {
         @Bean
         public SmsSender smsSender() {

@@ -43,7 +43,6 @@ import org.springframework.webflow.execution.RequestContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
@@ -635,6 +634,17 @@ public class WebUtils {
     /**
      * Gets http servlet request geo location.
      *
+     * @param context the context
+     * @return the http servlet request geo location
+     */
+    public static GeoLocationRequest getHttpServletRequestGeoLocationFromRequestContext(final RequestContext context) {
+        val servletRequest = getHttpServletRequestFromExternalWebflowContext(context);
+        return getHttpServletRequestGeoLocation(servletRequest);
+    }
+
+    /**
+     * Gets http servlet request geo location.
+     *
      * @param servletRequest the servlet request
      * @return the http servlet request geo location
      */
@@ -723,10 +733,32 @@ public class WebUtils {
      * Is remember me authentication enabled ?.
      *
      * @param context the context
-     * @return the boolean
+     * @return true/false
      */
     public static Boolean isRememberMeAuthenticationEnabled(final RequestContext context) {
         return context.getFlowScope().getBoolean("rememberMeAuthenticationEnabled", Boolean.FALSE);
+    }
+
+    /**
+     * Gets multifactor authentication trust record.
+     *
+     * @param <T>     the type parameter
+     * @param context the context
+     * @param clazz   the clazz
+     * @return the multifactor authentication trust record
+     */
+    public static <T> Optional<T> getMultifactorAuthenticationTrustRecord(final RequestContext context, final Class<T> clazz) {
+        return Optional.ofNullable(context.getFlowScope().get(CasWebflowConstants.VAR_ID_MFA_TRUST_RECORD, clazz));
+    }
+
+    /**
+     * Put multifactor authentication trust record.
+     *
+     * @param context the context
+     * @param object  the object
+     */
+    public static void putMultifactorAuthenticationTrustRecord(final RequestContext context, final Serializable object) {
+        context.getFlowScope().put(CasWebflowConstants.VAR_ID_MFA_TRUST_RECORD, object);
     }
 
     /**
@@ -908,7 +940,7 @@ public class WebUtils {
      * Has passwordless authentication account.
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean hasPasswordlessAuthenticationAccount(final RequestContext requestContext) {
         return requestContext.getFlowScope().contains("passwordlessAccount");
@@ -928,7 +960,7 @@ public class WebUtils {
      * Has request surrogate authentication request.
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean hasRequestSurrogateAuthenticationRequest(final RequestContext requestContext) {
         return requestContext.getFlowScope().getBoolean("requestSurrogateAccount", Boolean.FALSE);
@@ -977,7 +1009,7 @@ public class WebUtils {
      * Put graphical user authentication enabled.
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean isGraphicalUserAuthenticationEnabled(final RequestContext requestContext) {
         return BooleanUtils.isTrue(requestContext.getFlowScope().get("guaEnabled", Boolean.class));
@@ -997,7 +1029,7 @@ public class WebUtils {
      * Contains graphical user authentication username.
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean containsGraphicalUserAuthenticationUsername(final RequestContext requestContext) {
         return requestContext.getFlowScope().contains("guaUsername");
@@ -1017,7 +1049,7 @@ public class WebUtils {
      * Contains graphical user authentication image boolean.
      *
      * @param requestContext the request context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean containsGraphicalUserAuthenticationImage(final RequestContext requestContext) {
         return requestContext.getFlowScope().contains("guaUserImage");
@@ -1061,6 +1093,31 @@ public class WebUtils {
      */
     public static void putAcceptableUsagePolicyStatusIntoFlowScope(final RequestContext context, final Object status) {
         context.getFlowScope().put("aupStatus", status);
+    }
+
+    /**
+     * Put acceptable usage policy terms into flow scope.
+     *
+     * @param context the context
+     * @param terms   the terms
+     */
+    public static void putAcceptableUsagePolicyTermsIntoFlowScope(final RequestContext context, final Object terms) {
+        context.getFlowScope().put("aupPolicy", terms);
+    }
+
+    /**
+     * Gets acceptable usage policy terms from flow scope.
+     *
+     * @param <T>            the type parameter
+     * @param requestContext the request context
+     * @param clazz          the clazz
+     * @return the acceptable usage policy terms from flow scope
+     */
+    public static <T> T getAcceptableUsagePolicyTermsFromFlowScope(final RequestContext requestContext, final Class<T> clazz) {
+        if (requestContext.getFlowScope().contains("aupPolicy")) {
+            return (T) requestContext.getFlowScope().put("aupPolicy", clazz);
+        }
+        return null;
     }
 
     /**
@@ -1117,7 +1174,7 @@ public class WebUtils {
      * Is cas login form viewable.
      *
      * @param context the context
-     * @return the boolean
+     * @return true/false
      */
     public static boolean isCasLoginFormViewable(final RequestContext context) {
         return context.getFlowScope().getBoolean("casLoginFormViewable", Boolean.TRUE);
@@ -1203,8 +1260,50 @@ public class WebUtils {
      *
      * @param context the context
      * @return the open id local user id
+     * @deprecated Since 6.2.0
      */
+    @Deprecated(since = "6.2.0")
     public static String getOpenIdLocalUserId(final RequestContext context) {
         return context.getFlowScope().get("openIdLocalId", String.class);
+    }
+
+    /**
+     * Add the mfa provider id into flow scope.
+     *
+     * @param context  request context
+     * @param provider the mfa provider
+     */
+    public static void putMultifactorAuthenticationProviderIdIntoFlowScope(final RequestContext context, final MultifactorAuthenticationProvider provider) {
+        context.getFlowScope().put(CasWebflowConstants.VAR_ID_MFA_PROVIDER_ID, provider.getId());
+    }
+
+    /**
+     * Get the mfa provider id from flow scope.
+     *
+     * @param context request context
+     * @return provider id
+     */
+    public static String getMultifactorAuthenticationProviderById(final RequestContext context) {
+        return context.getFlowScope().get(CasWebflowConstants.VAR_ID_MFA_PROVIDER_ID, String.class);
+    }
+
+    /**
+     * Put selectable multifactor authentication providers.
+     *
+     * @param requestContext the request context
+     * @param mfaProviders   the mfa providers
+     */
+    public static void putSelectableMultifactorAuthenticationProviders(final RequestContext requestContext, final List<String> mfaProviders) {
+        requestContext.getViewScope().put("mfaSelectableProviders", mfaProviders);
+    }
+
+    /**
+     * Gets selectable multifactor authentication providers.
+     *
+     * @param requestContext the request context
+     * @return the selectable multifactor authentication providers
+     */
+    public static List<String> getSelectableMultifactorAuthenticationProviders(final RequestContext requestContext) {
+        return requestContext.getViewScope().get("mfaSelectableProviders", List.class);
     }
 }

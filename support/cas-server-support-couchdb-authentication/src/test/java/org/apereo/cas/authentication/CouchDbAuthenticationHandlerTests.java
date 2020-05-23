@@ -24,6 +24,7 @@ import org.apereo.cas.couchdb.core.CouchDbConnectorFactory;
 import org.apereo.cas.couchdb.core.ProfileCouchDbRepository;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -76,15 +77,16 @@ import static org.junit.jupiter.api.Assertions.*;
     RefreshAutoConfiguration.class
 },
     properties = {
-        "cas.authn.couchDb.dbName=authentication",
-        "cas.authn.couchDb.attributes=loc,state",
-        "cas.authn.couchDb.usernameAttribute=username",
-        "cas.authn.couchDb.passwordAttribute=password",
-        "cas.authn.couchDb.username=cas",
+        "cas.authn.couch-db.dbName=authentication",
+        "cas.authn.couch-db.attributes=loc,state",
+        "cas.authn.couch-db.usernameAttribute=username",
+        "cas.authn.couch-db.passwordAttribute=password",
+        "cas.authn.couch-db.username=cas",
         "cas.authn.couchdb.password=password",
         "cas.authn.pac4j.typedIdUsed=false"
     })
 @Tag("CouchDb")
+@EnabledIfPortOpen(port = 5984)
 public class CouchDbAuthenticationHandlerTests {
     @Autowired
     @Qualifier("authenticationCouchDbFactory")
