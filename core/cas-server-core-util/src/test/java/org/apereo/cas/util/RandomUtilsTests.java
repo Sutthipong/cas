@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 6.0.0
  */
-@Tag("Simple")
+@Tag("Utility")
 public class RandomUtilsTests {
     @Test
     public void verifyOperation() {
@@ -39,6 +39,12 @@ public class RandomUtilsTests {
 
         value = RandomUtils.nextInt(5, 5);
         assertNotNull(value);
+    }
+
+    @Test
+    public void verifyLong() {
+        var value = RandomUtils.nextLong(3, 3);
+        assertEquals(3, value);
     }
 
     @Test

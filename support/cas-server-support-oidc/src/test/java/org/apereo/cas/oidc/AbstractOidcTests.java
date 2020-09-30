@@ -13,6 +13,7 @@ import org.apereo.cas.config.CasCoreAuthenticationSupportConfiguration;
 import org.apereo.cas.config.CasCoreConfiguration;
 import org.apereo.cas.config.CasCoreHttpConfiguration;
 import org.apereo.cas.config.CasCoreMultifactorAuthenticationConfiguration;
+import org.apereo.cas.config.CasCoreNotificationsConfiguration;
 import org.apereo.cas.config.CasCoreServicesAuthenticationConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreTicketCatalogConfiguration;
@@ -32,11 +33,13 @@ import org.apereo.cas.config.CasThymeleafConfiguration;
 import org.apereo.cas.config.support.CasWebApplicationServiceFactoryConfiguration;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
+import org.apereo.cas.logout.slo.SingleLogoutServiceLogoutUrlBuilder;
 import org.apereo.cas.mock.MockTicketGrantingTicket;
+import org.apereo.cas.oidc.config.OidcComponentSerializationConfiguration;
 import org.apereo.cas.oidc.config.OidcConfiguration;
+import org.apereo.cas.oidc.config.OidcThrottleConfiguration;
 import org.apereo.cas.oidc.discovery.OidcServerDiscoverySettings;
 import org.apereo.cas.oidc.discovery.webfinger.OidcWebFingerDiscoveryService;
-import org.apereo.cas.oidc.dynareg.OidcClientRegistrationResponseTests;
 import org.apereo.cas.oidc.jwks.OidcJsonWebKeystoreGeneratorService;
 import org.apereo.cas.services.OidcRegisteredService;
 import org.apereo.cas.services.RegisteredServiceCipherExecutor;
@@ -60,6 +63,7 @@ import org.apereo.cas.ticket.OAuth20TokenSigningAndEncryptionService;
 import org.apereo.cas.ticket.accesstoken.OAuth20AccessToken;
 import org.apereo.cas.ticket.code.OAuth20CodeFactory;
 import org.apereo.cas.ticket.device.OAuth20DeviceTokenFactory;
+import org.apereo.cas.ticket.device.OAuth20DeviceUserCodeFactory;
 import org.apereo.cas.ticket.expiration.NeverExpiresExpirationPolicy;
 import org.apereo.cas.ticket.refreshtoken.OAuth20RefreshToken;
 import org.apereo.cas.ticket.registry.TicketRegistry;
@@ -80,14 +84,17 @@ import org.jose4j.jwk.PublicJsonWebKey;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.NumericDate;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
@@ -107,55 +114,20 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
-@SpringBootTest(classes = {
-    OidcConfiguration.class,
-    RefreshAutoConfiguration.class,
-    MailSenderAutoConfiguration.class,
-    CasCoreServicesConfiguration.class,
-    CasCoreUtilConfiguration.class,
-    CasCoreWebflowConfiguration.class,
-    CasCoreWebConfiguration.class,
-    CasCoreConfiguration.class,
-    CasCoreTicketsConfiguration.class,
-    CasCoreTicketCatalogConfiguration.class,
-    CasCoreTicketIdGeneratorsConfiguration.class,
-    CasDefaultServiceTicketIdGeneratorsConfiguration.class,
-    CasCoreHttpConfiguration.class,
-    CasCoreLogoutConfiguration.class,
-    CasWebflowContextConfiguration.class,
-    CasCoreAuthenticationPrincipalConfiguration.class,
-    CasPersonDirectoryTestConfiguration.class,
-    CasRegisteredServicesTestConfiguration.class,
-    CasCoreAuthenticationConfiguration.class,
-    CasCookieConfiguration.class,
-    CasThemesConfiguration.class,
-    CasThymeleafConfiguration.class,
-    CasWebApplicationServiceFactoryConfiguration.class,
-    CasCoreAuthenticationHandlersConfiguration.class,
-    CasCoreAuthenticationMetadataConfiguration.class,
-    CasCoreAuthenticationPolicyConfiguration.class,
-    CasCoreAuthenticationSupportConfiguration.class,
-    CasCoreServicesAuthenticationConfiguration.class,
-    CasOAuth20Configuration.class,
-    CasOAuth20EndpointsConfiguration.class,
-    OidcClientRegistrationResponseTests.class,
-    CasThrottlingConfiguration.class,
-    CasOAuth20ThrottleConfiguration.class,
-    CasMultifactorAuthenticationWebflowConfiguration.class,
-    CasCoreMultifactorAuthenticationConfiguration.class,
-    CasOAuth20AuthenticationServiceSelectionStrategyConfiguration.class,
-    CasCoreAuthenticationServiceSelectionStrategyConfiguration.class
-},
+@SpringBootTest(classes = AbstractOidcTests.SharedTestConfiguration.class,
     properties = {
         "cas.authn.oidc.issuer=https://sso.example.org/cas/oidc",
-        "cas.authn.oidc.jwks.jwksFile=classpath:keystore.jwks"
+        "cas.authn.oidc.jwks.jwks-file=classpath:keystore.jwks"
     })
 @DirtiesContext
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Tag("OIDC")
 public abstract class AbstractOidcTests {
 
     protected static final String TGT_ID = "TGT-0";
+
+    @Autowired
+    @Qualifier("singleLogoutServiceLogoutUrlBuilder")
+    protected SingleLogoutServiceLogoutUrlBuilder singleLogoutServiceLogoutUrlBuilder;
 
     @Autowired
     protected ConfigurableApplicationContext applicationContext;
@@ -176,6 +148,10 @@ public abstract class AbstractOidcTests {
     protected OAuth20AuthorizationResponseBuilder oidcImplicitIdTokenAndTokenCallbackUrlBuilder;
 
     @Autowired
+    @Qualifier("oidcImplicitIdTokenCallbackUrlBuilder")
+    protected OAuth20AuthorizationResponseBuilder oidcImplicitIdTokenCallbackUrlBuilder;
+
+    @Autowired
     @Qualifier("oauthRegisteredServiceJwtAccessTokenCipherExecutor")
     protected RegisteredServiceCipherExecutor oauthRegisteredServiceJwtAccessTokenCipherExecutor;
 
@@ -186,6 +162,10 @@ public abstract class AbstractOidcTests {
     @Autowired
     @Qualifier("defaultDeviceTokenFactory")
     protected OAuth20DeviceTokenFactory deviceTokenFactory;
+
+    @Autowired
+    @Qualifier("defaultDeviceUserCodeFactory")
+    protected OAuth20DeviceUserCodeFactory deviceUserCodeFactory;
 
     @Autowired
     @Qualifier("oidcUserProfileDataCreator")
@@ -271,8 +251,61 @@ public abstract class AbstractOidcTests {
     protected ConsentApprovalViewResolver consentApprovalViewResolver;
 
     @Autowired
-    @Qualifier("accessTokenJwtBuilder")
-    protected JwtBuilder accessTokenJwtBuilder;
+    @Qualifier("oidcAccessTokenJwtBuilder")
+    protected JwtBuilder oidcAccessTokenJwtBuilder;
+
+    @BeforeEach
+    public void initialize() {
+        servicesManager.save(getOidcRegisteredService());
+    }
+
+    @ImportAutoConfiguration({
+        RefreshAutoConfiguration.class,
+        SecurityAutoConfiguration.class,
+        WebMvcAutoConfiguration.class
+    })
+    @SpringBootConfiguration
+    @Import({
+        OidcConfiguration.class,
+        OidcThrottleConfiguration.class,
+        OidcComponentSerializationConfiguration.class,
+        CasCoreNotificationsConfiguration.class,
+        CasCoreServicesConfiguration.class,
+        CasCoreUtilConfiguration.class,
+        CasCoreWebflowConfiguration.class,
+        CasCoreWebConfiguration.class,
+        CasCoreConfiguration.class,
+        CasCoreTicketsConfiguration.class,
+        CasCoreTicketCatalogConfiguration.class,
+        CasCoreTicketIdGeneratorsConfiguration.class,
+        CasDefaultServiceTicketIdGeneratorsConfiguration.class,
+        CasCoreHttpConfiguration.class,
+        CasCoreLogoutConfiguration.class,
+        CasWebflowContextConfiguration.class,
+        CasCoreAuthenticationPrincipalConfiguration.class,
+        CasPersonDirectoryTestConfiguration.class,
+        CasRegisteredServicesTestConfiguration.class,
+        CasCoreAuthenticationConfiguration.class,
+        CasCookieConfiguration.class,
+        CasThemesConfiguration.class,
+        CasThymeleafConfiguration.class,
+        CasWebApplicationServiceFactoryConfiguration.class,
+        CasCoreAuthenticationHandlersConfiguration.class,
+        CasCoreAuthenticationMetadataConfiguration.class,
+        CasCoreAuthenticationPolicyConfiguration.class,
+        CasCoreAuthenticationSupportConfiguration.class,
+        CasCoreServicesAuthenticationConfiguration.class,
+        CasOAuth20Configuration.class,
+        CasOAuth20EndpointsConfiguration.class,
+        CasThrottlingConfiguration.class,
+        CasOAuth20ThrottleConfiguration.class,
+        CasMultifactorAuthenticationWebflowConfiguration.class,
+        CasCoreMultifactorAuthenticationConfiguration.class,
+        CasOAuth20AuthenticationServiceSelectionStrategyConfiguration.class,
+        CasCoreAuthenticationServiceSelectionStrategyConfiguration.class
+    })
+    public static class SharedTestConfiguration {
+    }
 
     protected static OidcRegisteredService getOidcRegisteredService() {
         return getOidcRegisteredService(true, true);
@@ -383,11 +416,5 @@ public abstract class AbstractOidcTests {
             OidcConstants.StandardScopes.OPENID.getScope()));
         when(token.getExpirationPolicy()).thenReturn(NeverExpiresExpirationPolicy.INSTANCE);
         return token;
-    }
-
-
-    @BeforeEach
-    public void initialize() {
-        servicesManager.save(getOidcRegisteredService());
     }
 }

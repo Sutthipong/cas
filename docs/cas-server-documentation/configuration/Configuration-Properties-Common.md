@@ -11,7 +11,7 @@ To see the full list of CAS properties, please [review this guide](Configuration
 
 ## What is `${configurationKey}`?
 
-Many CAS *sub* settings are common and applicable to a number of modules and features. For example, in dealing with database authentication there are a number of database-related modules who own an individual setting to define the database driver. These settings would typically be defined as `cas.authn.feature1.database-driver=xyz` and `cas.authn.feature2.database-driver=abc`. Rather than duplicating the shared and common `database-driver` setting, this page attempts to collect only what might be common CAS settings across features and modules while referring to the specific feature under the path `${configurationKey}`. Therefor, the documentation for either `feature1` or `feature2` might allow one to find common database-related settings (such as the `database-driver`) under `${configurationKey}.database-driver` where `${configurationKey}` would either be `cas.authn.feature1` or `cas.authn.feature2` depending on feature at hand. The notes and documentation for each feature that wants to inherit from a common block of settings should always advertise the appropriate value for `${configurationKey}`.
+Many CAS *sub* settings are common and applicable to a number of modules and features. For example, in dealing with database authentication there are a number of database-related modules who own an individual setting to define the database driver. These settings would typically be defined as `cas.authn.feature1.database-driver=xyz` and `cas.authn.feature2.database-driver=abc`. Rather than duplicating the shared and common `database-driver` setting, this page attempts to collect only what might be common CAS settings across features and modules while referring to the specific feature under the path `${configurationKey}`. Therefore, the documentation for either `feature1` or `feature2` might allow one to find common database-related settings (such as the `database-driver`) under `${configurationKey}.database-driver` where `${configurationKey}` would either be `cas.authn.feature1` or `cas.authn.feature2` depending on feature at hand. The notes and documentation for each feature that wants to inherit from a common block of settings should always advertise the appropriate value for `${configurationKey}`.
 
 ## Naming Convention
 
@@ -34,7 +34,7 @@ The index `[0]` is meant to be incremented by the adopter to allow for distinct 
 
 ## Trust But Verify
 
-If you are unsure about the meaning of a given CAS setting, do **NOT** simply turn it on without hesitation.
+If you are unsure about the meaning of a given CAS setting, do **NOT** turn it on without hesitation.
 Review the codebase or better yet, [ask questions](/cas/Mailing-Lists.html) to clarify the intended behavior.
 
 <div class="alert alert-info"><strong>Keep It Simple</strong><p>If you do not know or cannot tell what a setting does, you do not need it.</p></div>
@@ -117,11 +117,11 @@ password encoding. Most options are based on Spring Security's [support for pass
 The following options related to password encoding support in CAS apply equally to a number of CAS components (authentication handlers, etc) given the component's *configuration key*:
 
 ```properties
-# ${configurationKey}.passsword-encoder.type=NONE|DEFAULT|STANDARD|BCRYPT|SCRYPT|PBKDF2
-# ${configurationKey}.passsword-encoder.character-encoding=
-# ${configurationKey}.passsword-encoder.encoding-algorithm=
-# ${configurationKey}.passsword-encoder.secret=
-# ${configurationKey}.passsword-encoder.strength=16
+# ${configurationKey}.password-encoder.type=NONE|DEFAULT|STANDARD|BCRYPT|SCRYPT|PBKDF2
+# ${configurationKey}.password-encoder.character-encoding=
+# ${configurationKey}.password-encoder.encoding-algorithm=
+# ${configurationKey}.password-encoder.secret=
+# ${configurationKey}.password-encoder.strength=16
 ```
 
 The following options are supported:
@@ -240,19 +240,11 @@ when CAS attempts to establish connections, run queries, etc.
 
 ```properties
 # ${configurationKey}.keyspace=
-# ${configurationKey}.port=9042
-# ${configurationKey}.contact-points=localhost1,localhost2
-# ${configurationKey}.localDc=
-# ${configurationKey}.protocol-version=V1|V2|V3|V4
-# ${configurationKey}.retry-policy=DEFAULT_RETRY_POLICY|DOWNGRADING_CONSISTENCY_RETRY_POLICY|FALLTHROUGH_RETRY_POLICY
-# ${configurationKey}.compression=LZ4|SNAPPY|NONE
+# ${configurationKey}.contact-points=localhost:9042
+# ${configurationKey}.local-dc=
 # ${configurationKey}.consistency-level=ANY|ONE|TWO|THREE|QUORUM|LOCAL_QUORUM|ALL|EACH_QUORUM|LOCAL_SERIAL|SERIAL|LOCAL_ONE
 # ${configurationKey}.serial-consistency-level=ANY|ONE|TWO|THREE|QUORUM|LOCAL_QUORUM|ALL|EACH_QUORUM|LOCAL_SERIAL|SERIAL|LOCAL_ONE
-# ${configurationKey}.max-connections=10
-# ${configurationKey}.core-connections=1
-# ${configurationKey}.max-requests-per-connection=1024
-# ${configurationKey}.connect-timeout-millis=5000
-# ${configurationKey}.read-timeout-millis=5000
+# ${configurationKey}.timeout=PT5S
 ```
 
 ## Hibernate & JDBC
@@ -479,6 +471,25 @@ The following options related to Person Directory support in CAS when it attempt
 # ${configurationKey}.active-attribute-repository-ids=StubRepository,etc
 ```
 
+## Git Configuration
+
+The following options related to Git integration support in CAS when it attempts to connect and pull/push changes, given the component's *configuration key*:
+
+```properties
+# ${configurationKey}.git.repository-url=https://github.com/repository
+# ${configurationKey}.git.branches-to-clone=master
+# ${configurationKey}.git.active-branch=master
+# ${configurationKey}.git.sign-commits=false
+# ${configurationKey}.git.username=
+# ${configurationKey}.git.password=
+# ${configurationKey}.git.clone-directory=file:/tmp/cas-service-registry
+# ${configurationKey}.git.push-changes=false
+# ${configurationKey}.git.private-key-passphrase=
+# ${configurationKey}.git.private-key-path=
+# ${configurationKey}.git.ssh-session-password=
+# ${configurationKey}.git.timeout=PT10S
+```
+
 ## InfluxDb Configuration
 
 The following options related to InfluxDb support in CAS apply equally to a number of CAS components given the component's *configuration key*:
@@ -492,6 +503,26 @@ The following options related to InfluxDb support in CAS apply equally to a numb
 # ${configurationKey}.points-to-flush=100
 # ${configurationKey}.batch-interval=PT5S
 # ${configurationKey}.consistency-level=ALL
+```
+
+## Apache Kafka Configuration
+
+The following options related to Kafka support in CAS apply equally to a number of CAS components given the component's *configuration key*:
+
+```properties
+# ${configurationKey}.bootstrap-address=localhost:9092
+```
+
+### Apache Kafka Topic Configuration
+
+The following options related to Kafka support in CAS apply equally to a number of CAS components given the component's *configuration key*:
+
+```properties
+# ${configurationKey}.name=
+# ${configurationKey}.partitions=1
+# ${configurationKey}.replicas=1
+# ${configurationKey}.compression-type=gzip
+# ${configurationKey}.config.key=value
 ```
 
 ## Hazelcast Configuration
@@ -698,7 +729,7 @@ The following options related to CouchDb support in CAS apply equally to a numbe
 # ${configurationKey}.couch-db.max-connections=20
 # ${configurationKey}.couch-db.enable-ssl=
 # ${configurationKey}.couch-db.relaxed-ssl-settings=
-# ${configurationKey}.couch-db.caching=true
+# ${configurationKey}.couch-db.caching=false
 # ${configurationKey}.couch-db.max-cache-entries=1000
 # ${configurationKey}.couch-db.max-object-size-bytes=8192
 # ${configurationKey}.couch-db.use-expect-continue=true
@@ -724,26 +755,30 @@ The following options related to MongoDb support in CAS apply equally to a numbe
 ```properties
 # ${configurationKey}.mongo.host=localhost
 # ${configurationKey}.mongo.client-uri=localhost
-# ${configurationKey}.mongo.idle-timeout=30000
 # ${configurationKey}.mongo.port=27017
 # ${configurationKey}.mongo.drop-collection=false
 # ${configurationKey}.mongo.socket-keep-alive=false
 # ${configurationKey}.mongo.password=
 
-# Depending on the feature at hand, CAS may decide to dynamically create its own collections and ignore this setting.
 # ${configurationKey}.mongo.collection=cas-service-registry
 
 # ${configurationKey}.mongo.database-name=cas-mongo-database
 # ${configurationKey}.mongo.timeout=5000
 # ${configurationKey}.mongo.user-id=
 # ${configurationKey}.mongo.write-concern=NORMAL
+# ${configurationKey}.mongo.read-concern=AVAILABLE
+# ${configurationKey}.mongo.read-preference=PRIMARY
 # ${configurationKey}.mongo.authentication-database-name=
 # ${configurationKey}.mongo.replica-set=
 # ${configurationKey}.mongo.ssl-enabled=false
 # ${configurationKey}.mongo.retry-writes=false
 
-# ${configurationKey}.mongo.conns.lifetime=60000
-# ${configurationKey}.mongo.conns.per-host=10
+# ${configurationKey}.mongo.pool.life-time=60000
+# ${configurationKey}.mongo.pool.idle-time=30000
+# ${configurationKey}.mongo.pool.max-wait-time=60000
+# ${configurationKey}.mongo.pool.max-size=10
+# ${configurationKey}.mongo.pool.min-size=1
+# ${configurationKey}.mongo.pool.per-host=10
 ```
 
 ## DynamoDb Configuration
@@ -783,7 +818,11 @@ The following options related to Redis support in CAS apply equally to a number 
 # ${configurationKey}.redis.timeout=2000
 # ${configurationKey}.redis.use-ssl=false
 # ${configurationKey}.redis.read-from=MASTER
+```
 
+### Redis Pool Configuration
+
+```properties
 # ${configurationKey}.redis.pool.enabled=false
 # ${configurationKey}.redis.pool.max-active=20
 # ${configurationKey}.redis.pool.max-idle=8
@@ -799,11 +838,28 @@ The following options related to Redis support in CAS apply equally to a number 
 # ${configurationKey}.redis.pool.test-on-borrow=false
 # ${configurationKey}.redis.pool.test-on-return=false
 # ${configurationKey}.redis.pool.test-while-idle=false
+```
 
+### Redis Sentinel Configuration
+
+```properties
 # ${configurationKey}.redis.sentinel.master=mymaster
 # ${configurationKey}.redis.sentinel.node[0]=localhost:26377
 # ${configurationKey}.redis.sentinel.node[1]=localhost:26378
 # ${configurationKey}.redis.sentinel.node[2]=localhost:26379
+```
+
+### Redis Cluster Configuration
+
+```properties
+# ${configurationKey}.redis.cluster.password=
+# ${configurationKey}.redis.cluster.max-redirects=0
+# ${configurationKey}.redis.cluster.nodes[0].host=
+# ${configurationKey}.redis.cluster.nodes[0].port=
+# ${configurationKey}.redis.cluster.nodes[0].replica-of=
+# ${configurationKey}.redis.cluster.nodes[0].id=
+# ${configurationKey}.redis.cluster.nodes[0].name=
+# ${configurationKey}.redis.cluster.nodes[0].type=MASTER|SLAVE
 ```
 
 ## DDL Configuration
@@ -929,34 +985,25 @@ The following options are shared and apply when CAS is configured to integrate w
 Amazon Web Service features, given the provider's *configuration key*:
 
 ```properties
-# Path to an external properties file that contains 'accessKey' and 'secretKey' fields.
-# ${configurationKey}.credentials-properties-file=file:/path/to/file.properties
-
 # ${configurationKey}.credential-access-key=
 # ${configurationKey}.credential-secret-key=
 
 # ${configurationKey}.endpoint=http://localhost:8000
 # ${configurationKey}.region=US_WEST_2|US_EAST_2|EU_WEST_2|<REGION-NAME>
-# ${configurationKey}.region-override=
 # ${configurationKey}.local-address=
+# ${configurationKey}.retry-mode=STANDARD|LEGACY
 
-# ${configurationKey}.max-error-retry=-1
 # ${configurationKey}.proxy-host=
 # ${configurationKey}.proxy-password=
-# ${configurationKey}.proxy-port=-1
+# ${configurationKey}.proxy-username=
 
 # ${configurationKey}.read-capacity=10
 # ${configurationKey}.write-capacity=10
 # ${configurationKey}.connection-timeout=5000
-# ${configurationKey}.request-timeout=5000
 # ${configurationKey}.socket-timeout=5000
-# ${configurationKey}.use-gzip=false
 # ${configurationKey}.use-reaper=false
-# ${configurationKey}.use-throttle-retries=false
-# ${configurationKey}.use-tcp-keep-alive=false
-# ${configurationKey}.protocol=HTTPS
+
 # ${configurationKey}.client-execution-timeout=10000
-# ${configurationKey}.cache-response-metadata=false
 # ${configurationKey}.max-connections=10
 ```
 
@@ -1019,7 +1066,7 @@ Password policy strategy types are outlined below. The strategy evaluates the au
 |---------------|-----------------------------------------------------------------------------
 | `DEFAULT`     | Accepts the authentication response as is, and processes account state, if any.
 | `GROOVY`      | Examine the authentication response as part of a Groovy script dynamically. The responsibility of handling account state changes and warnings is entirely delegated to the script.
-| `REJECT_RESULT_CODE`  | An extension of the `DEFAULT` where account state is processed only if the result code of the authentication response is not blacklisted in the configuration. By default `INVALID_CREDENTIALS(49)` prevents CAS from handling account states.
+| `REJECT_RESULT_CODE`  | An extension of the `DEFAULT` where account state is processed only if the result code of the authentication response is not denied in the configuration. By default `INVALID_CREDENTIALS(49)` prevents CAS from handling account states.
 
 If the password policy strategy is to be handed off to a Groovy script, the outline of the script may be as follows:
 
@@ -1137,7 +1184,8 @@ to an external OpenID Connect provider such as Azure AD, given the provider's *c
 # ${configurationKey}.logout-url=
 # ${configurationKey}.max-clock-skew=
 # ${configurationKey}.scope=
-# ${configurationKey}.use-nonce=
+# ${configurationKey}.use-nonce=false
+# ${configurationKey}.disable-nonce=false
 # ${configurationKey}.preferred-jws-algorithm=
 # ${configurationKey}.response-mode=
 # ${configurationKey}.response-type=
@@ -1357,3 +1405,14 @@ The following types are supported:
 | `PRIMARY_GROUP` | Constructs the primary group SID and then searches for that group and puts it's DN in the 'memberOf' attribute of the original search entry. 
 | `RANGE_ENTRY` |  Rewrites attributes returned from Active Directory to include all values by performing additional searches.
 | `RECURSIVE_ENTRY` | This recursively searches based on a supplied attribute and merges those results into the original entry.
+
+### LDAP Multiple Base DNs
+
+There may be scenarios where different parts of a single LDAP tree could be considered as base-dns. Rather than duplicating 
+the LDAP configuration block for each individual base-dn, each entry can be specified and joined together using a special delimiter character.
+The user DN is retrieved using the combination of all base-dn and DN resolvers in the order defined. DN resolution should fail if multiple DNs 
+are found. Otherwise the first DN found is returned.
+
+```properties
+# ${configurationKey}.base-dn=subtreeA,dc=example,dc=net|subtreeC,dc=example,dc=net
+```

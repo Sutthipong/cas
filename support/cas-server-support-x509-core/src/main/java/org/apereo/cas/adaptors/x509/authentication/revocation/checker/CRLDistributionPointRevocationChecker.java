@@ -4,6 +4,7 @@ import org.apereo.cas.adaptors.x509.authentication.CRLFetcher;
 import org.apereo.cas.adaptors.x509.authentication.ResourceCRLFetcher;
 import org.apereo.cas.adaptors.x509.authentication.revocation.policy.RevocationPolicy;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.crypto.CertUtils;
 
 import lombok.SneakyThrows;
@@ -116,14 +117,15 @@ public class CRLDistributionPointRevocationChecker extends AbstractCRLRevocation
                         try {
                             addURL(urls, DERIA5String.getInstance(name.getName()).getString());
                         } catch (final Exception e) {
-                            LOGGER.warn("[{}] not supported. String or GeneralNameList expected.", pointName);
+                            LOGGER.warn("[{}] not supported: [{}].", pointName, e.getMessage());
                         }
                     });
                 });
             }
             return urls.toArray(URI[]::new);
         } catch (final Exception e) {
-            LOGGER.error("Error reading CRLDistributionPoints extension field on [{}]", CertUtils.toString(cert), e);
+            LOGGER.debug("Error reading CRLDistributionPoints extension field on [{}]", CertUtils.toString(cert));
+            LoggingUtils.error(LOGGER, e);
             return new URI[0];
         }
     }
@@ -187,7 +189,7 @@ public class CRLDistributionPointRevocationChecker extends AbstractCRLRevocation
                         listOfLocations.add(crl);
                     }
                 } catch (final Exception e) {
-                    LOGGER.error("Error fetching CRL at [{}]", url, e);
+                    LoggingUtils.error(LOGGER, e);
                     if (this.throwOnFetchFailure) {
                         throw new RuntimeException(e.getMessage(), e);
                     }

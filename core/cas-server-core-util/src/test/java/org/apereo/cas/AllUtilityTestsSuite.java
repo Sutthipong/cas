@@ -19,16 +19,13 @@ import org.apereo.cas.util.cipher.ProtocolTicketCipherExecutorTests;
 import org.apereo.cas.util.cipher.RsaKeyPairCipherExecutorTests;
 import org.apereo.cas.util.cipher.TicketGrantingCookieCipherExecutorTests;
 import org.apereo.cas.util.cipher.WebflowConversationStateCipherExecutorTests;
-import org.apereo.cas.util.gen.Base64RandomStringGeneratorTests;
 import org.apereo.cas.util.gen.ChainingPrincipalNameTransformerTests;
 import org.apereo.cas.util.gen.DefaultLongNumericGeneratorTests;
 import org.apereo.cas.util.gen.DefaultRandomStringGeneratorTests;
 import org.apereo.cas.util.gen.HexRandomStringGeneratorTests;
+import org.apereo.cas.util.gen.RandomStringGeneratorTests;
 import org.apereo.cas.util.http.HttpMessageTests;
 import org.apereo.cas.util.http.SimpleHttpClientTests;
-import org.apereo.cas.util.io.CommunicationsManagerTests;
-import org.apereo.cas.util.io.GroovySmsSenderTests;
-import org.apereo.cas.util.io.RestfulSmsSenderTests;
 
 import org.junit.platform.runner.JUnitPlatform;
 import org.junit.platform.suite.api.SelectClasses;
@@ -49,8 +46,7 @@ import org.junit.runner.RunWith;
     HttpMessageTests.class,
     SimpleHttpClientTests.class,
     CasEmbeddedValueResolverTests.class,
-    CommunicationsManagerTests.class,
-    Base64RandomStringGeneratorTests.class,
+    RandomStringGeneratorTests.class,
     ChainingPrincipalNameTransformerTests.class,
     CollectionUtilsTests.class,
     CompressionUtilsTests.class,
@@ -65,8 +61,6 @@ import org.junit.runner.RunWith;
     BinaryCipherExecutorTests.class,
     ResourceUtilsTests.class,
     ScriptingUtilsTests.class,
-    GroovySmsSenderTests.class,
-    RestfulSmsSenderTests.class,
     RandomUtilsTests.class,
     SystemUtilsTests.class,
     JsonUtilsTests.class

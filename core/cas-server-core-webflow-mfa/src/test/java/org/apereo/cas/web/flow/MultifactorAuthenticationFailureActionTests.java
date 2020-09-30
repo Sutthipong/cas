@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 6.2.0
  */
 @DirtiesContext
-@Tag("Webflow")
+@Tag("WebflowMfaActions")
 public class MultifactorAuthenticationFailureActionTests extends BaseCasWebflowMultifactorAuthenticationTests {
     @Autowired
     @Qualifier("mfaFailureAction")

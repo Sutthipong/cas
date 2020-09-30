@@ -1,5 +1,6 @@
 package org.apereo.cas.authentication;
 
+import org.apereo.cas.CasProtocolConstants;
 import org.apereo.cas.authentication.credential.HttpBasedServiceCredential;
 import org.apereo.cas.authentication.credential.UsernamePasswordCredential;
 import org.apereo.cas.authentication.handler.support.SimpleTestUsernamePasswordAuthenticationHandler;
@@ -94,6 +95,7 @@ public class CoreAuthenticationTestUtils {
         val svc = mock(WebApplicationService.class);
         when(svc.getId()).thenReturn(id);
         when(svc.getOriginalUrl()).thenReturn(id);
+        when(svc.getSource()).thenReturn(CasProtocolConstants.PARAMETER_SERVICE);
         return svc;
     }
 
@@ -150,6 +152,10 @@ public class CoreAuthenticationTestUtils {
 
     public static Authentication getAuthentication(final Principal principal, final Map<String, List<Object>> attributes) {
         return getAuthentication(principal, attributes, null);
+    }
+
+    public static Authentication getAuthentication(final Map<String, List<Object>> authnAttributes) {
+        return getAuthentication(getPrincipal(CONST_USERNAME), authnAttributes, null);
     }
 
     public static Authentication getAuthentication(final Principal principal, final Map<String, List<Object>> attributes, final ZonedDateTime authnDate) {

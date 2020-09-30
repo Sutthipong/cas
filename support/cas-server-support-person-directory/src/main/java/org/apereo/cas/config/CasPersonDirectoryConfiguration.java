@@ -17,6 +17,7 @@ import org.apereo.cas.persondir.PersonDirectoryAttributeRepositoryPlan;
 import org.apereo.cas.persondir.PersonDirectoryAttributeRepositoryPlanConfigurer;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.LdapUtils;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.ResourceUtils;
 import org.apereo.cas.util.function.FunctionUtils;
 import org.apereo.cas.util.io.FileWatcherService;
@@ -42,6 +43,8 @@ import org.apereo.services.persondir.support.jdbc.MultiRowJdbcPersonAttributeDao
 import org.apereo.services.persondir.support.jdbc.SingleRowJdbcPersonAttributeDao;
 import org.apereo.services.persondir.support.ldap.LdaptivePersonAttributeDao;
 import org.jooq.lambda.Unchecked;
+import org.ldaptive.handler.LdapEntryHandler;
+import org.ldaptive.handler.SearchResultHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -313,15 +316,29 @@ public class CasPersonDirectoryConfiguration {
                         ldapDao.setResultAttributeMapping(ldap.getAttributes());
                         val attributes = (String[]) ldap.getAttributes().keySet().toArray(ArrayUtils.EMPTY_STRING_ARRAY);
                         constraints.setReturningAttributes(attributes);
-
-                        val binaryAttributes = ldap.getBinaryAttributes();
-                        if (binaryAttributes != null && !binaryAttributes.isEmpty()) {
-                            LOGGER.debug("Setting binary attributes [{}]", binaryAttributes);
-                            ldapDao.setBinaryAttributes(binaryAttributes.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
-                        }
                     } else {
                         LOGGER.debug("Retrieving all attributes as no explicit attribute mappings are defined for [{}]", ldap.getLdapUrl());
                         constraints.setReturningAttributes(null);
+                    }
+
+                    val binaryAttributes = ldap.getBinaryAttributes();
+                    if (binaryAttributes != null && !binaryAttributes.isEmpty()) {
+                        LOGGER.debug("Setting binary attributes [{}]", binaryAttributes);
+                        ldapDao.setBinaryAttributes(binaryAttributes.toArray(ArrayUtils.EMPTY_STRING_ARRAY));
+                    }
+
+                    val searchEntryHandlers = ldap.getSearchEntryHandlers();
+                    if (searchEntryHandlers != null && !searchEntryHandlers.isEmpty()) {
+                        val entryHandlers = LdapUtils.newLdaptiveEntryHandlers(searchEntryHandlers);
+                        if (entryHandlers != null && !entryHandlers.isEmpty()) {
+                            LOGGER.debug("Setting entry handlers [{}]", entryHandlers);
+                            ldapDao.setEntryHandlers(entryHandlers.toArray(new LdapEntryHandler[0]));
+                        }
+                        val searchResultHandlers = LdapUtils.newLdaptiveSearchResultHandlers(searchEntryHandlers);
+                        if (searchResultHandlers != null && !searchResultHandlers.isEmpty()) {
+                            LOGGER.debug("Setting search result handlers [{}]", searchResultHandlers);
+                            ldapDao.setSearchResultHandlers(searchResultHandlers.toArray(new SearchResultHandler[0]));
+                        }
                     }
 
                     if (ldap.isSubtreeSearch()) {
@@ -466,7 +483,7 @@ public class CasPersonDirectoryConfiguration {
                                 try {
                                     dao.init();
                                 } catch (final Exception e) {
-                                    LOGGER.error(e.getMessage(), e);
+                                    LoggingUtils.error(LOGGER, e);
                                 }
                             });
                             watcherService.start(getClass().getSimpleName());

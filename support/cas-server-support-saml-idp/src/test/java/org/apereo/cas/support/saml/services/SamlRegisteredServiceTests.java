@@ -6,11 +6,13 @@ import org.apereo.cas.services.DefaultServicesManager;
 import org.apereo.cas.services.DenyAllAttributeReleasePolicy;
 import org.apereo.cas.services.InMemoryServiceRegistry;
 import org.apereo.cas.services.JsonServiceRegistry;
+import org.apereo.cas.services.ServicesManagerConfigurationContext;
 import org.apereo.cas.services.replication.NoOpRegisteredServiceReplicationStrategy;
 import org.apereo.cas.services.resource.DefaultRegisteredServiceResourceNamingStrategy;
 import org.apereo.cas.util.io.WatcherService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,14 +41,18 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SamlRegisteredServiceTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "samlRegisteredService.json");
+
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     private static final ClassPathResource RESOURCE = new ClassPathResource("services");
+
     private static final String SAML_SERVICE = "SAMLService";
+
     private static final String METADATA_LOCATION = "classpath:/metadata/idp-metadata.xml";
 
     @BeforeAll
     public static void prepTests() throws Exception {
+        Arrays.stream(FileUtils.getTempDirectory().listFiles()).forEach(File::delete);
         FileUtils.cleanDirectory(RESOURCE.getFile());
     }
 
@@ -81,7 +87,7 @@ public class SamlRegisteredServiceTests {
         val chain = new ChainingAttributeReleasePolicy();
         chain.setPolicies(Arrays.asList(policy, new DenyAllAttributeReleasePolicy()));
         service.setAttributeReleasePolicy(chain);
-
+        
         val dao = new JsonServiceRegistry(new FileSystemResource(FileUtils.getTempDirectory()), WatcherService.noOp(),
             appCtx, new NoOpRegisteredServiceReplicationStrategy(),
             new DefaultRegisteredServiceResourceNamingStrategy(),
@@ -99,7 +105,13 @@ public class SamlRegisteredServiceTests {
         service.setServiceId("^http://.+");
         service.setMetadataLocation(METADATA_LOCATION);
         val dao = new InMemoryServiceRegistry(appCtx, List.of(service), new ArrayList<>());
-        val impl = new DefaultServicesManager(dao, appCtx, new HashSet<>());
+        val context = ServicesManagerConfigurationContext.builder()
+            .serviceRegistry(dao)
+            .applicationContext(appCtx)
+            .environments(new HashSet<>(0))
+            .servicesCache(Caffeine.newBuilder().build())
+            .build();
+        val impl = new DefaultServicesManager(context);
         impl.load();
 
         val s = impl.findServiceBy(new WebApplicationServiceFactory()

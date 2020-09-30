@@ -1,6 +1,7 @@
 package org.apereo.cas.authentication.attribute;
 
 import org.apereo.cas.services.RegisteredService;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.ResourceUtils;
 import org.apereo.cas.util.io.FileWatcherService;
 
@@ -24,7 +25,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -69,11 +69,7 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
                     try {
                         loadAttributeDefinitionsFromInputStream(new FileSystemResource(file));
                     } catch (final Exception e) {
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.error(e.getMessage(), e);
-                        } else {
-                            LOGGER.error(e.getMessage());
-                        }
+                        LoggingUtils.error(LOGGER, e);
                     }
                 });
                 this.storeWatcherService.start(getClass().getSimpleName());
@@ -85,7 +81,7 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
         Arrays.stream(defns).forEach(this::registerAttributeDefinition);
     }
 
-    private void loadAttributeDefinitionsFromInputStream(final Resource resource) throws IOException {
+    private void loadAttributeDefinitionsFromInputStream(final Resource resource) {
         try {
             LOGGER.trace("Loading attribute definitions from [{}]", resource);
             val json = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -94,7 +90,7 @@ public class DefaultAttributeDefinitionStore implements AttributeDefinitionStore
             });
             map.forEach(this::registerAttributeDefinition);
         } catch (final Exception e) {
-            LOGGER.warn(e.getMessage(), e);
+            LoggingUtils.warn(LOGGER, e);
         }
     }
 

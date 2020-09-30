@@ -1,9 +1,13 @@
 package org.apereo.cas.configuration.model.support.mfa;
 
+import org.apereo.cas.configuration.model.RestEndpointProperties;
 import org.apereo.cas.configuration.model.support.mfa.gauth.GoogleAuthenticatorMultifactorProperties;
+import org.apereo.cas.configuration.model.support.mfa.u2f.U2FMultifactorProperties;
+import org.apereo.cas.configuration.model.support.mfa.webauthn.WebAuthnMultifactorProperties;
+import org.apereo.cas.configuration.model.support.mfa.yubikey.YubiKeyMultifactorProperties;
 import org.apereo.cas.configuration.support.RequiresModule;
-import org.apereo.cas.configuration.support.RestEndpointProperties;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -24,6 +28,7 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(chain = true)
+@JsonFilter("MultifactorAuthenticationProperties")
 public class MultifactorAuthenticationProperties implements Serializable {
 
     private static final long serialVersionUID = 7416521468929733907L;
@@ -173,7 +178,7 @@ public class MultifactorAuthenticationProperties implements Serializable {
      * to decide which provider makes the most sense at any given time.
      */
     private boolean providerSelectionEnabled;
-    
+
     /**
      * Activate and configure a multifactor authentication provider via U2F FIDO.
      */
@@ -191,6 +196,12 @@ public class MultifactorAuthenticationProperties implements Serializable {
      */
     @NestedConfigurationProperty
     private YubiKeyMultifactorProperties yubikey = new YubiKeyMultifactorProperties();
+
+    /**
+     * Activate and configure a multifactor authentication provider via WebAuthN.
+     */
+    @NestedConfigurationProperty
+    private WebAuthnMultifactorProperties webAuthn = new WebAuthnMultifactorProperties();
 
     /**
      * Activate and configure a multifactor authentication provider via RADIUS.

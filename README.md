@@ -26,7 +26,7 @@ component by the same name hosted here, with support for a plethora of additiona
 
 - [How to contribute][contribute]
 
-If you have already identified an enhancement or a bug, it is STRONGLY recommended that you simply submit a pull request to address the case.
+If you have already identified an enhancement or a bug, it is STRONGLY recommended that you submit a pull request to address the case.
 There is no need for special ceremony to create separate issues. The pull request IS the issue and it will be tracked and tagged as such.
 
 ## Documentation [![Javadoc](https://img.shields.io/badge/Documentation-Javadoc-ff69b4.svg)](https://www.javadoc.io/doc/org.apereo.cas/cas-server-core)
@@ -34,8 +34,7 @@ There is no need for special ceremony to create separate issues. The pull reques
 | Version         | Reference
 |------------|-----------------------------------
 | ![](https://img.shields.io/badge/Development-WIP-blue.svg?style=flat) | [Link](https://apereo.github.io/cas/development)
-| ![](https://img.shields.io/badge/6.1.x-Current-green.svg?style=flat) | [Link](https://apereo.github.io/cas/6.1.x)
-| ![](https://img.shields.io/badge/6.0.x-Current-green.svg?style=flat) | [Link](https://apereo.github.io/cas/6.0.x)
+| ![](https://img.shields.io/badge/6.2.x-Current-green.svg?style=flat) | [Link](https://apereo.github.io/cas/6.2.x)
 
 Additional resources are available as follows:
 
@@ -71,7 +70,7 @@ The following features are supported by the CAS project:
 * Authorization via ABAC, Time/Date, REST, Internet2's Grouper and more.
 * HA clustered deployments via Hazelcast, Ehcache, JPA, Apache Cassandra, Memcached, Apache Ignite, MongoDb, Redis, DynamoDb, Couchbase and more.
 * Application registration backed by JSON, LDAP, YAML, Apache Cassandra, JPA, Couchbase, MongoDb, DynamoDb, Redis and more.
-* Multifactor authentication via Duo Security, YubiKey, RSA, Google Authenticator and more.
+* Multifactor authentication via Duo Security, YubiKey, RSA, Google Authenticator, U2F, WebAuthn and more.
 * Administrative UIs to manage logging, monitoring, statistics, configuration, client registration and more.
 * Global and per-application user interface theme and branding.
 * Password management and password policy enforcement.

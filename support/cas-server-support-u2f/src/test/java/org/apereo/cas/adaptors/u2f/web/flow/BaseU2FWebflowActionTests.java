@@ -10,6 +10,7 @@ import org.apereo.cas.config.CasCoreAuthenticationSupportConfiguration;
 import org.apereo.cas.config.CasCoreConfiguration;
 import org.apereo.cas.config.CasCoreHttpConfiguration;
 import org.apereo.cas.config.CasCoreMultifactorAuthenticationConfiguration;
+import org.apereo.cas.config.CasCoreNotificationsConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreTicketCatalogConfiguration;
 import org.apereo.cas.config.CasCoreTicketComponentSerializationConfiguration;
@@ -27,6 +28,9 @@ import org.apereo.cas.config.support.authentication.U2FAuthenticationComponentSe
 import org.apereo.cas.config.support.authentication.U2FAuthenticationEventExecutionPlanConfiguration;
 import org.apereo.cas.config.support.authentication.U2FAuthenticationMultifactorProviderBypassConfiguration;
 import org.apereo.cas.logout.config.CasCoreLogoutConfiguration;
+import org.apereo.cas.trusted.config.MultifactorAuthnTrustConfiguration;
+import org.apereo.cas.trusted.config.MultifactorAuthnTrustWebflowConfiguration;
+import org.apereo.cas.trusted.config.MultifactorAuthnTrustedDeviceFingerprintConfiguration;
 import org.apereo.cas.util.crypto.CertUtils;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
@@ -36,7 +40,6 @@ import org.apereo.cas.web.flow.config.CasWebflowContextConfiguration;
 import com.yubico.u2f.U2F;
 import com.yubico.u2f.data.DeviceRegistration;
 import lombok.val;
-import org.junit.jupiter.api.Tag;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,7 +64,6 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 6.2.0
  */
-@Tag("Webflow")
 public abstract class BaseU2FWebflowActionTests {
     @Autowired
     @Qualifier("u2fSaveAccountRegistrationAction")
@@ -74,6 +76,10 @@ public abstract class BaseU2FWebflowActionTests {
     @Autowired
     @Qualifier("u2fStartRegistrationAction")
     protected Action u2fStartRegistrationAction;
+
+    @Autowired
+    @Qualifier("u2fStartAuthenticationAction")
+    protected Action u2fStartAuthenticationAction;
 
     @Autowired
     @Qualifier("u2fDeviceRepository")
@@ -96,6 +102,7 @@ public abstract class BaseU2FWebflowActionTests {
         CasCoreWebflowConfiguration.class,
         CasWebflowContextConfiguration.class,
         CasCoreUtilConfiguration.class,
+        CasCoreNotificationsConfiguration.class,
         CasCoreServicesConfiguration.class,
         CasCoreWebConfiguration.class,
         CasCookieConfiguration.class,
@@ -111,10 +118,17 @@ public abstract class BaseU2FWebflowActionTests {
         CasCoreMultifactorAuthenticationConfiguration.class,
         CasMultifactorAuthenticationWebflowConfiguration.class,
         CasCoreConfiguration.class,
+
+
+        MultifactorAuthnTrustConfiguration.class,
+        MultifactorAuthnTrustedDeviceFingerprintConfiguration.class,
+        MultifactorAuthnTrustWebflowConfiguration.class,
+
         U2FConfiguration.class,
         U2FAuthenticationComponentSerializationConfiguration.class,
         U2FAuthenticationEventExecutionPlanConfiguration.class,
         U2FAuthenticationMultifactorProviderBypassConfiguration.class,
+        U2FWebflowConfiguration.U2FMultifactorTrustConfiguration.class,
         U2FWebflowConfiguration.class
     })
     public static class SharedTestConfiguration {
@@ -126,7 +140,7 @@ public abstract class BaseU2FWebflowActionTests {
         @Bean
         public U2F u2fService() throws Exception {
             val cert = CertUtils.readCertificate(new ClassPathResource("cert.crt"));
-            val r1 = new DeviceRegistration("keyhandle11", "publickey1", cert, 1);
+            val r1 = new DeviceRegistration("keyhandle11", "publickey1", cert, 20);
             val u2f = mock(U2F.class);
             when(u2f.startRegistration(any(), any())).thenAnswer(new Answer<Object>() {
                 @Override
@@ -135,6 +149,7 @@ public abstract class BaseU2FWebflowActionTests {
                 }
             });
             when(u2f.finishRegistration(any(), any())).thenReturn(r1);
+            when(u2f.finishSignature(any(), any(), any())).thenReturn(r1);
             return u2f;
         }
     }

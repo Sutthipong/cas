@@ -42,7 +42,7 @@ public class DatabaseAuthenticationTestConfiguration {
     @Value("${database.name:cas-authentications}")
     private String databaseName;
 
-    @Value("${database.driverClass:org.hsqldb.jdbcDriver}")
+    @Value("${database.driver-class:org.hsqldb.jdbcDriver}")
     private String databaseDriverClassName;
 
     @Value("${database.dialect:org.hibernate.dialect.HSQLDialect}")
@@ -68,12 +68,12 @@ public class DatabaseAuthenticationTestConfiguration {
 
     @Bean
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
-        val ctx = new JpaConfigurationContext(
-            jpaVendorAdapter(),
-            "databaseAuthnContext",
-            CollectionUtils.wrap("org.apereo.cas.adaptors.jdbc"),
-            dataSource());
-
+        val ctx = JpaConfigurationContext.builder()
+            .jpaVendorAdapter(jpaVendorAdapter())
+            .persistenceUnitName("databaseAuthnContext")
+            .dataSource(dataSource())
+            .packagesToScan(CollectionUtils.wrap("org.apereo.cas.adaptors.jdbc"))
+            .build();
         val jpaProperties = ctx.getJpaProperties();
         jpaProperties.put("hibernate.dialect", databaseDialect);
         jpaProperties.put("hibernate.hbm2ddl.auto", this.hbm2ddl);

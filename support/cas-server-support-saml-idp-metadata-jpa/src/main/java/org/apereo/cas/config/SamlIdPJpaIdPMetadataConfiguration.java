@@ -84,6 +84,7 @@ public class SamlIdPJpaIdPMetadataConfiguration {
     }
 
     @Bean
+    @RefreshScope
     public List<String> jpaSamlMetadataIdPPackagesToScan() {
         val idp = casProperties.getAuthn().getSamlIdp().getMetadata();
         val type = new JpaSamlIdPMetadataDocumentFactory(idp.getJpa().getDialect()).getType();
@@ -95,11 +96,12 @@ public class SamlIdPJpaIdPMetadataConfiguration {
     public LocalContainerEntityManagerFactoryBean samlMetadataIdPEntityManagerFactory() {
         val idp = casProperties.getAuthn().getSamlIdp().getMetadata();
         val factory = jpaBeanFactory.getObject();
-        val ctx = new JpaConfigurationContext(
-            jpaSamlMetadataIdPVendorAdapter(),
-            "jpaSamlMetadataIdPContext",
-            jpaSamlMetadataIdPPackagesToScan(),
-            dataSourceSamlMetadataIdP());
+        val ctx = JpaConfigurationContext.builder()
+            .jpaVendorAdapter(jpaSamlMetadataIdPVendorAdapter())
+            .persistenceUnitName("jpaSamlMetadataIdPContext")
+            .dataSource(dataSourceSamlMetadataIdP())
+            .packagesToScan(jpaSamlMetadataIdPPackagesToScan())
+            .build();
         return factory.newEntityManagerFactoryBean(ctx, idp.getJpa());
     }
 
@@ -137,7 +139,7 @@ public class SamlIdPJpaIdPMetadataConfiguration {
         val context = SamlIdPMetadataGeneratorConfigurationContext.builder()
             .samlIdPMetadataLocator(samlIdPMetadataLocator())
             .samlIdPCertificateAndKeyWriter(samlSelfSignedCertificateWriter.getObject())
-            .resourceLoader(applicationContext)
+            .applicationContext(applicationContext)
             .casProperties(casProperties)
             .metadataCipherExecutor(jpaSamlIdPMetadataCipherExecutor())
             .build();

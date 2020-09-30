@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @author yudhi.k.surtan
  * @since 5.2.0
  */
-@Tag("Simple")
+@Tag("Authentication")
 public class FortressAuthenticationHandlerTests {
     @Mock
     private AccessMgr accessManager;
@@ -42,8 +42,8 @@ public class FortressAuthenticationHandlerTests {
     private FortressAuthenticationHandler fortressAuthenticationHandler;
 
     @BeforeEach
-    public void initializeTest() {
-        MockitoAnnotations.initMocks(this);
+    public void initializeTest() throws Exception {
+        MockitoAnnotations.openMocks(this).close();
         fortressAuthenticationHandler.setAccessManager(accessManager);
     }
 

@@ -1,5 +1,6 @@
 package org.apereo.cas.util;
 
+import org.apereo.cas.util.crypto.CipherExecutor;
 import org.apereo.cas.util.crypto.DecryptionException;
 import org.apereo.cas.util.crypto.PrivateKeyFactoryBean;
 import org.apereo.cas.util.crypto.PublicKeyFactoryBean;
@@ -8,6 +9,7 @@ import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.keys.AesKey;
 import org.jose4j.keys.RsaKeyUtil;
 import org.junit.jupiter.api.Tag;
@@ -17,6 +19,7 @@ import org.springframework.core.io.ClassPathResource;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,24 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 5.2.0
  */
-@Tag("Simple")
+@Tag("Utility")
 public class EncodingUtilsTests {
-
-    @SneakyThrows
-    private static PrivateKey getPrivateKey() {
-        val factory = new PrivateKeyFactoryBean();
-        factory.setAlgorithm(RsaKeyUtil.RSA);
-        factory.setLocation(new ClassPathResource("keys/RSA2048Private.key"));
-        factory.setSingleton(false);
-        return factory.getObject();
-    }
-
-    @SneakyThrows
-    private static PublicKey getPublicKey() {
-        val factory = new PublicKeyFactoryBean(new ClassPathResource("keys/RSA2048Public.key"), RsaKeyUtil.RSA);
-        factory.setSingleton(false);
-        return factory.getObject();
-    }
 
     @Test
     public void verifyAesKeyForJwtSigning() {
@@ -67,6 +54,20 @@ public class EncodingUtilsTests {
     }
 
     @Test
+    public void verifyKeyForJwtEncryption() {
+        val secret = EncodingUtils.generateJsonWebKey(256);
+        val key = EncodingUtils.generateJsonWebKey(secret);
+        val value = "ThisValue";
+        val found = EncodingUtils.encryptValueAsJwt(key, value, KeyManagementAlgorithmIdentifiers.DIRECT,
+            CipherExecutor.DEFAULT_CONTENT_ENCRYPTION_ALGORITHM, "kidValue", new HashMap<>(0));
+        val jwt = EncodingUtils.decryptJwtValue(key, found);
+        assertTrue(jwt.equals(value));
+        assertThrows(IllegalArgumentException.class, () ->
+            EncodingUtils.encryptValueAsJwt(key, null, KeyManagementAlgorithmIdentifiers.DIRECT,
+                CipherExecutor.DEFAULT_CONTENT_ENCRYPTION_ALGORITHM, "kidValue", new HashMap<>(0)));
+    }
+
+    @Test
     public void verifyAesKeyForJwtEncryption() {
         val secret = EncodingUtils.generateJsonWebKey(256);
         val key = EncodingUtils.generateJsonWebKey(secret);
@@ -77,7 +78,6 @@ public class EncodingUtilsTests {
 
         assertThrows(DecryptionException.class, () -> EncodingUtils.decryptJwtValue(key, null));
     }
-    
 
     @Test
     public void verifyRsaKeyForJwtEncryption() {
@@ -104,5 +104,23 @@ public class EncodingUtilsTests {
 
         assertFalse(EncodingUtils.encodeBase32("one".getBytes(StandardCharsets.UTF_8), true).isEmpty());
         assertFalse(EncodingUtils.encodeBase64("one".getBytes(StandardCharsets.UTF_8), false).isEmpty());
+    }
+
+    @SneakyThrows
+    private static PrivateKey getPrivateKey() {
+        val factory = new PrivateKeyFactoryBean();
+        factory.setAlgorithm(RsaKeyUtil.RSA);
+        factory.setLocation(new ClassPathResource("keys/RSA2048Private.key"));
+        factory.setSingleton(false);
+        assertEquals(PrivateKey.class, factory.getObjectType());
+        return factory.getObject();
+    }
+
+    @SneakyThrows
+    private static PublicKey getPublicKey() {
+        val factory = new PublicKeyFactoryBean(new ClassPathResource("keys/RSA2048Public.key"), RsaKeyUtil.RSA);
+        factory.setSingleton(false);
+        assertEquals(PublicKey.class, factory.getObjectType());
+        return factory.getObject();
     }
 }

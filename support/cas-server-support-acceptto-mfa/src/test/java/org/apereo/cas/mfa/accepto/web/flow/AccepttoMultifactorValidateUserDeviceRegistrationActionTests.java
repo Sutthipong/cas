@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("RestfulApi")
 @SpringBootTest(classes = BaseAccepttoMultifactorAuthenticationTests.SharedTestConfiguration.class,
     properties = {
-        "cas.authn.mfa.acceptto.apiUrl=http://localhost:5011",
+        "cas.authn.mfa.acceptto.api-url=http://localhost:5011",
         "cas.authn.mfa.acceptto.application-id=thisisatestid",
         "cas.authn.mfa.acceptto.group-attribute=group",
         "cas.authn.mfa.acceptto.email-attribute=email",
@@ -77,9 +77,6 @@ public class AccepttoMultifactorValidateUserDeviceRegistrationActionTests {
             val result = action.doExecute(context);
             assertEquals(result.getId(), CasWebflowConstants.TRANSITION_ID_FINALIZE);
             assertTrue(WebUtils.getCredential(context) instanceof AccepttoEmailCredential);
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage(), e);
         }
-
     }
 }

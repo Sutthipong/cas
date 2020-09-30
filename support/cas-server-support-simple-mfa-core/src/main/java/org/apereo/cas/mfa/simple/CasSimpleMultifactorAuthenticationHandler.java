@@ -6,8 +6,8 @@ import org.apereo.cas.authentication.Credential;
 import org.apereo.cas.authentication.handler.support.AbstractPreAndPostProcessingAuthenticationHandler;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.PrincipalFactory;
+import org.apereo.cas.mfa.simple.ticket.CasSimpleMultifactorAuthenticationTicket;
 import org.apereo.cas.services.ServicesManager;
-import org.apereo.cas.ticket.TransientSessionTicket;
 import org.apereo.cas.web.support.WebUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,12 +44,7 @@ public class CasSimpleMultifactorAuthenticationHandler extends AbstractPreAndPos
         val uid = authentication.getPrincipal().getId();
 
         LOGGER.debug("Received principal id [{}]. Attempting to locate token in registry...", uid);
-        val acct = this.centralAuthenticationService.getTicket(tokenCredential.getId(), TransientSessionTicket.class);
-
-        if (acct == null) {
-            LOGGER.warn("Authorization of token [{}] has failed. Token is not found in registry", tokenCredential.getId());
-            throw new FailedLoginException("Failed to authenticate code " + tokenCredential.getId());
-        }
+        val acct = centralAuthenticationService.getTicket(tokenCredential.getId(), CasSimpleMultifactorAuthenticationTicket.class);
         val properties = acct.getProperties();
         if (!properties.containsKey(CasSimpleMultifactorAuthenticationConstants.PROPERTY_PRINCIPAL)) {
             LOGGER.warn("Unable to locate principal for token [{}]", tokenCredential.getId());
@@ -78,7 +73,7 @@ public class CasSimpleMultifactorAuthenticationHandler extends AbstractPreAndPos
      *
      * @param acct the acct
      */
-    protected void deleteToken(final TransientSessionTicket acct) {
+    protected void deleteToken(final CasSimpleMultifactorAuthenticationTicket acct) {
         this.centralAuthenticationService.deleteTicket(acct.getId());
     }
 

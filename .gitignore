@@ -14,7 +14,9 @@ bin/
 **/.history
 *.orig
 .idea/
+*.class
 .DS_Store
+production/
 .idea
 overlays/
 pom.xml.versionsBackup
@@ -42,6 +44,7 @@ reports
 *.asc
 /.nb-gradle/
 **/.sts4-cache/**
+**/work/**
 etc/loadtests/loadtests/**
 etc/loadtests/locustfiles/**
 etc/loadtests/__pycache__/**

@@ -14,6 +14,8 @@ import org.apereo.cas.config.CasCoreAuthenticationServiceSelectionStrategyConfig
 import org.apereo.cas.config.CasCoreAuthenticationSupportConfiguration;
 import org.apereo.cas.config.CasCoreConfiguration;
 import org.apereo.cas.config.CasCoreHttpConfiguration;
+import org.apereo.cas.config.CasCoreMultifactorAuthenticationConfiguration;
+import org.apereo.cas.config.CasCoreNotificationsConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreTicketCatalogConfiguration;
 import org.apereo.cas.config.CasCoreTicketIdGeneratorsConfiguration;
@@ -31,10 +33,12 @@ import org.apereo.cas.token.cipher.JwtTicketCipherExecutor;
 import org.apereo.cas.util.MockWebServer;
 import org.apereo.cas.web.config.CasCookieConfiguration;
 import org.apereo.cas.web.flow.config.CasCoreWebflowConfiguration;
+import org.apereo.cas.web.flow.config.CasMultifactorAuthenticationWebflowConfiguration;
 import org.apereo.cas.web.flow.config.CasWebflowContextConfiguration;
 
 import com.nimbusds.jwt.JWTParser;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.*;
     CasWebApplicationServiceFactoryConfiguration.class,
     CasCoreUtilConfiguration.class,
     TokenCoreConfiguration.class,
+    CasCoreNotificationsConfiguration.class,
     CasCoreServicesConfiguration.class,
     CasPersonDirectoryConfiguration.class,
     CasCoreWebConfiguration.class,
@@ -76,6 +81,8 @@ import static org.junit.jupiter.api.Assertions.*;
     CasCoreTicketCatalogConfiguration.class,
     CasCoreLogoutConfiguration.class,
     CasCookieConfiguration.class,
+    CasCoreMultifactorAuthenticationConfiguration.class,
+    CasMultifactorAuthenticationWebflowConfiguration.class,
     CasCoreConfiguration.class,
     CasCoreAuthenticationServiceSelectionStrategyConfiguration.class,
     CasCoreAuthenticationPrincipalConfiguration.class,
@@ -92,7 +99,7 @@ import static org.junit.jupiter.api.Assertions.*;
 })
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @EnableScheduling
-@Tag("Simple")
+@Tag("Authentication")
 public class TokenWebApplicationServiceResponseBuilderTests {
     @Autowired
     @Qualifier("webApplicationServiceResponseBuilder")
@@ -118,7 +125,7 @@ public class TokenWebApplicationServiceResponseBuilderTests {
     }
 
     @Test
-    public void verifyTokenBuilder() {
+    public void verifyTokenBuilder() throws Exception {
         val data = "yes\ncasuser";
         try (val webServer = new MockWebServer(8281,
             new ByteArrayResource(data.getBytes(StandardCharsets.UTF_8), "REST Output"), MediaType.APPLICATION_JSON_VALUE)) {
@@ -131,10 +138,21 @@ public class TokenWebApplicationServiceResponseBuilderTests {
             assertTrue(result.getAttributes().containsKey(CasProtocolConstants.PARAMETER_TICKET));
             val ticket = result.getAttributes().get(CasProtocolConstants.PARAMETER_TICKET);
             assertNotNull(JWTParser.parse(ticket));
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage(), e);
         }
+    }
+    
+    @Test
+    public void verifyTokenBuilderWithoutServiceTicket() throws Exception {
+        val data = "yes\ncasuser";
+        try (val webServer = new MockWebServer(8281,
+            new ByteArrayResource(data.getBytes(StandardCharsets.UTF_8), "REST Output"), MediaType.APPLICATION_JSON_VALUE)) {
+            webServer.start();
 
-
+            val result = responseBuilder.build(CoreAuthenticationTestUtils.getWebApplicationService("jwtservice"),
+                StringUtils.EMPTY,
+                CoreAuthenticationTestUtils.getAuthentication());
+            assertNotNull(result);
+            assertFalse(result.getAttributes().containsKey(CasProtocolConstants.PARAMETER_TICKET));
+        }
     }
 }

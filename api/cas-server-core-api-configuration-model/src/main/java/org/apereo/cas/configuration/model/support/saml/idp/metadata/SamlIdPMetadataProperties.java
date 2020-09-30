@@ -58,10 +58,24 @@ public class SamlIdPMetadataProperties implements Serializable {
     private String location = "file:/etc/cas/saml";
 
     /**
+     * Directory location where downloaded SAML metadata is cached
+     * as backup files. If left undefined, the directory is calculated
+     * off of {@link #getLocation()}. The directory location
+     * should also support and be resolvable via Spring expression language.
+     */
+    private String metadataBackupLocation;
+
+    /**
      * Properties pertaining to mongo db saml metadata resolvers.
      */
     @NestedConfigurationProperty
     private MongoDbSamlMetadataProperties mongo = new MongoDbSamlMetadataProperties();
+
+    /**
+     * Properties pertaining to git saml metadata resolvers.
+     */
+    @NestedConfigurationProperty
+    private GitSamlMetadataProperties git = new GitSamlMetadataProperties();
 
     /**
      * Properties pertaining to jpa metadata resolution.

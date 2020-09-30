@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 6.2.0
  */
-@TestPropertySource(properties = "cas.ticket.tst.timeToKillInSeconds=20")
-@Tag("Simple")
+@TestPropertySource(properties = "cas.ticket.tst.time-to-kill-in-seconds=20")
+@Tag("Tickets")
 public class DefaultTransientSessionTicketFactoryTests extends BaseTicketFactoryTests {
     @Test
     public void verifyExpirationPolicy() {

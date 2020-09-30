@@ -5,6 +5,7 @@ import org.apereo.cas.services.RegisteredServiceAccessStrategyUtils;
 import org.apereo.cas.services.RegisteredServiceCipherExecutor;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.crypto.CipherExecutor;
 
 import com.nimbusds.jose.JOSEObjectType;
@@ -40,7 +41,7 @@ import java.util.Optional;
 public class JwtBuilder {
     private static final int MAP_SIZE = 8;
 
-    private final String casSeverPrefix;
+    private final String issuer;
 
     private final CipherExecutor<Serializable, String> defaultTokenCipherExecutor;
 
@@ -62,11 +63,7 @@ public class JwtBuilder {
             try {
                 return JWTClaimsSet.parse(jwt);
             } catch (final Exception ex) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.error(e.getMessage(), ex);
-                } else {
-                    LOGGER.error(ex.getMessage());
-                }
+                LoggingUtils.error(LOGGER, ex);
                 throw new IllegalArgumentException("Unable to parse JWT");
             }
         }
@@ -128,7 +125,7 @@ public class JwtBuilder {
         val serviceAudience = payload.getServiceAudience();
         val claims = new JWTClaimsSet.Builder()
             .audience(serviceAudience)
-            .issuer(casSeverPrefix)
+            .issuer(issuer)
             .jwtID(payload.getJwtId())
             .issueTime(payload.getIssueDate())
             .subject(payload.getSubject());
@@ -143,8 +140,7 @@ public class JwtBuilder {
         claims.expirationTime(payload.getValidUntilDate());
 
         val claimsSet = claims.build();
-        val object = claimsSet.toJSONObject();
-        val jwtJson = object.toJSONString();
+        val jwtJson = claimsSet.toJSONObject().toJSONString();
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Generated JWT [{}]", JsonValue.readJSON(jwtJson).toString(Stringify.FORMATTED));

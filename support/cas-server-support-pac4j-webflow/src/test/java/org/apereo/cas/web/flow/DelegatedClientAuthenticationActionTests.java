@@ -68,7 +68,7 @@ import static org.springframework.webflow.execution.RequestContextHolder.setRequ
  * @since 3.5.2
  */
 @SpringBootTest(classes = BaseDelegatedAuthenticationTests.SharedTestConfiguration.class)
-@Tag("Webflow")
+@Tag("WebflowActions")
 @Slf4j
 public class DelegatedClientAuthenticationActionTests {
     @Autowired
@@ -161,7 +161,7 @@ public class DelegatedClientAuthenticationActionTests {
         assertEquals(service.getId(), request.getAttribute(CasProtocolConstants.PARAMETER_SERVICE));
         val flowScope = context.getFlowScope();
         assertEquals(service.getId(), ((Service) flowScope.get(CasProtocolConstants.PARAMETER_SERVICE)).getId());
-        val credential = (ClientCredential) flowScope.get(CasWebflowConstants.VAR_ID_CREDENTIAL);
+        val credential = flowScope.get(CasWebflowConstants.VAR_ID_CREDENTIAL, ClientCredential.class);
         assertNotNull(credential);
         assertTrue(credential.getId().equals("casuser"));
     }
@@ -183,7 +183,7 @@ public class DelegatedClientAuthenticationActionTests {
         val mockRequestContext = new MockRequestContext();
         mockRequestContext.setExternalContext(servletExternalContext);
 
-        assertThrows(IllegalArgumentException.class, () -> delegatedAuthenticationAction.execute(mockRequestContext));
+        assertEquals(CasWebflowConstants.TRANSITION_ID_STOP, delegatedAuthenticationAction.execute(mockRequestContext).getId());
     }
 
     @Test
@@ -278,7 +278,7 @@ public class DelegatedClientAuthenticationActionTests {
 
         LOGGER.debug("Initializing action with request parameters [{}]", webContext.getRequestParameters());
         val event = delegatedAuthenticationAction.execute(requestContext);
-        assertEquals("error", event.getId());
+        assertEquals(CasWebflowConstants.TRANSITION_ID_ERROR, event.getId());
 
         delegatedClientWebflowManager.retrieve(requestContext, webContext, client);
 

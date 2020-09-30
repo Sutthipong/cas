@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -33,7 +34,7 @@ import java.util.UUID;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
-@Configuration(value = "ldapMonitorConfiguration", proxyBeanMethods = false)
+@Configuration(value = "ldapMonitorConfiguration", proxyBeanMethods = true)
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 public class LdapMonitorConfiguration {
     private static final int MAP_SIZE = 8;
@@ -46,7 +47,7 @@ public class LdapMonitorConfiguration {
         val list = new ListFactoryBean() {
             @Override
             protected void destroyInstance(final List list) {
-                list.forEach(connectionFactory ->
+                Objects.requireNonNull(list).forEach(connectionFactory ->
                     ((ConnectionFactory) connectionFactory).close()
                 );
             }

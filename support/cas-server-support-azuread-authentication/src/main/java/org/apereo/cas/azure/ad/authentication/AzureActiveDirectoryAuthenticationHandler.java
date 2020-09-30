@@ -79,12 +79,20 @@ public class AzureActiveDirectoryAuthenticationHandler extends AbstractUsernameP
         throw new FailedLoginException(msg);
     }
 
-    private AuthenticationResult getAccessTokenFromUserCredentials(final String username, final String password) throws Exception {
+    /**
+     * Gets access token from user credentials.
+     *
+     * @param username the username
+     * @param password the password
+     * @return the access token from user credentials
+     * @throws Exception the exception
+     */
+    protected AuthenticationResult getAccessTokenFromUserCredentials(final String username, final String password) throws Exception {
         var service = (ExecutorService) null;
         try {
             service = Executors.newFixedThreadPool(1);
             val context = new AuthenticationContext(this.loginUrl, false, service);
-            LOGGER.debug("Acquiring token for resource [{}] and client id [{}} for user [{}]", this.resource, this.clientId, username);
+            LOGGER.debug("Acquiring token for resource [{}] and client id [{}] for user [{}]", this.resource, this.clientId, username);
             val future = context.acquireToken(this.resource, this.clientId, username, password, null);
             return future.get();
         } finally {

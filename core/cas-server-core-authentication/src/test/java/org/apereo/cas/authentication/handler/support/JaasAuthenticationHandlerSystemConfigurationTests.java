@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Marvin S. Addison
  * @since 3.0.0
  */
-@Tag("Simple")
+@Tag("Authentication")
 public class JaasAuthenticationHandlerSystemConfigurationTests {
 
     private static final String USERNAME = "test";
@@ -43,6 +43,8 @@ public class JaasAuthenticationHandlerSystemConfigurationTests {
         if (fileName.exists()) {
             System.setProperty("java.security.auth.login.config", '=' + fileName.getCanonicalPath());
             handler = new JaasAuthenticationHandler(StringUtils.EMPTY, null, null, null);
+            handler.setKerberosKdcSystemProperty("P1");
+            handler.setKerberosRealmSystemProperty("P2");
         }
     }
 
@@ -54,8 +56,7 @@ public class JaasAuthenticationHandlerSystemConfigurationTests {
     }
 
     @Test
-    @SneakyThrows
-    public void verifyWithAlternativeRealmAndValidCredentials() {
+    public void verifyWithAlternativeRealmAndValidCredentials() throws Exception {
         handler.setRealm("TEST");
         assertNotNull(handler.authenticate(CoreAuthenticationTestUtils.getCredentialsWithDifferentUsernameAndPassword(USERNAME, USERNAME)));
     }

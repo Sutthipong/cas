@@ -70,13 +70,13 @@ public class JpaEventsConfiguration {
     @Lazy
     @Bean
     public LocalContainerEntityManagerFactoryBean eventsEntityManagerFactory() {
-
         val factory = jpaBeanFactory.getObject();
-        val ctx = new JpaConfigurationContext(
-            jpaEventVendorAdapter(),
-            "jpaEventRegistryContext",
-            jpaEventPackagesToScan(),
-            dataSourceEvent());
+        val ctx = JpaConfigurationContext.builder()
+            .jpaVendorAdapter(jpaEventVendorAdapter())
+            .persistenceUnitName("jpaEventRegistryContext")
+            .dataSource(dataSourceEvent())
+            .packagesToScan(jpaEventPackagesToScan())
+            .build();
         return factory.newEntityManagerFactoryBean(ctx, casProperties.getEvents().getJpa());
     }
 

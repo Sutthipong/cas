@@ -9,11 +9,14 @@ import org.apereo.cas.authentication.principal.ShibbolethCompatiblePersistentIdG
 import org.apereo.cas.authentication.principal.WebApplicationService;
 import org.apereo.cas.authentication.principal.WebApplicationServiceResponseBuilder;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.configuration.support.Beans;
+import org.apereo.cas.notifications.CommunicationsManager;
 import org.apereo.cas.services.ChainingServiceRegistry;
 import org.apereo.cas.services.ChainingServicesManager;
 import org.apereo.cas.services.DefaultChainingServiceRegistry;
 import org.apereo.cas.services.DefaultServiceRegistryExecutionPlan;
 import org.apereo.cas.services.DefaultServicesManager;
+import org.apereo.cas.services.DefaultServicesManagerRegisteredServiceLocator;
 import org.apereo.cas.services.ImmutableServiceRegistry;
 import org.apereo.cas.services.InMemoryServiceRegistry;
 import org.apereo.cas.services.RegisteredService;
@@ -26,7 +29,9 @@ import org.apereo.cas.services.ServiceRegistryExecutionPlan;
 import org.apereo.cas.services.ServiceRegistryExecutionPlanConfigurer;
 import org.apereo.cas.services.ServiceRegistryListener;
 import org.apereo.cas.services.ServicesManager;
+import org.apereo.cas.services.ServicesManagerConfigurationContext;
 import org.apereo.cas.services.ServicesManagerExecutionPlanConfigurer;
+import org.apereo.cas.services.ServicesManagerRegisteredServiceLocator;
 import org.apereo.cas.services.ServicesManagerScheduledLoader;
 import org.apereo.cas.services.domain.DefaultDomainAwareServicesManager;
 import org.apereo.cas.services.domain.DefaultRegisteredServiceDomainExtractor;
@@ -35,8 +40,9 @@ import org.apereo.cas.services.replication.RegisteredServiceReplicationStrategy;
 import org.apereo.cas.services.resource.DefaultRegisteredServiceResourceNamingStrategy;
 import org.apereo.cas.services.resource.RegisteredServiceResourceNamingStrategy;
 import org.apereo.cas.services.util.RegisteredServiceYamlHttpMessageConverter;
-import org.apereo.cas.util.io.CommunicationsManager;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import lombok.extern.slf4j.Slf4j;
@@ -231,14 +237,50 @@ public class CasCoreServicesConfiguration {
         servicesManager().load();
     }
 
+    @RefreshScope
+    @Bean
+    @ConditionalOnMissingBean(name = "servicesManagerCache")
+    public Cache<Long, RegisteredService> servicesManagerCache() {
+        val serviceRegistry = casProperties.getServiceRegistry();
+        val duration = Beans.newDuration(serviceRegistry.getCache());
+        return Caffeine.newBuilder()
+            .initialCapacity(serviceRegistry.getCacheCapacity())
+            .maximumSize(serviceRegistry.getCacheSize())
+            .expireAfterWrite(duration)
+            .recordStats()
+            .build();
+    }
+
     @Bean
     @ConditionalOnMissingBean(name = "defaultServicesManagerExecutionPlanConfigurer")
     @ConditionalOnProperty(prefix = "cas.service-registry", name = "management-type", havingValue = "DEFAULT", matchIfMissing = true)
     public ServicesManagerExecutionPlanConfigurer defaultServicesManagerExecutionPlanConfigurer() {
         return () -> {
             val activeProfiles = Arrays.stream(environment.getActiveProfiles()).collect(Collectors.toSet());
-            return new DefaultServicesManager(serviceRegistry(), applicationContext, activeProfiles);
+            val context = ServicesManagerConfigurationContext.builder()
+                .serviceRegistry(serviceRegistry())
+                .applicationContext(applicationContext)
+                .environments(activeProfiles)
+                .servicesCache(servicesManagerCache())
+                .registeredServiceLocators(servicesManagerRegisteredServiceLocators())
+                .build();
+            return new DefaultServicesManager(context);
         };
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "servicesManagerRegisteredServiceLocators")
+    public List<ServicesManagerRegisteredServiceLocator> servicesManagerRegisteredServiceLocators() {
+        val locators = applicationContext.getBeansOfType(ServicesManagerRegisteredServiceLocator.class, false, true);
+        val sortedLocators = new ArrayList<>(locators.values());
+        AnnotationAwareOrderComparator.sortIfNecessary(sortedLocators);
+        return sortedLocators;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "defaultServicesManagerRegisteredServiceLocator")
+    public ServicesManagerRegisteredServiceLocator defaultServicesManagerRegisteredServiceLocator() {
+        return new DefaultServicesManagerRegisteredServiceLocator();
     }
 
     @Bean
@@ -247,9 +289,13 @@ public class CasCoreServicesConfiguration {
     public ServicesManagerExecutionPlanConfigurer domainServicesManagerExecutionPlanConfigurer() {
         return () -> {
             val activeProfiles = Arrays.stream(environment.getActiveProfiles()).collect(Collectors.toSet());
-            return new DefaultDomainAwareServicesManager(serviceRegistry(), applicationContext,
-                new DefaultRegisteredServiceDomainExtractor(),
-                activeProfiles);
+            val context = ServicesManagerConfigurationContext.builder()
+                .serviceRegistry(serviceRegistry())
+                .applicationContext(applicationContext)
+                .environments(activeProfiles)
+                .servicesCache(servicesManagerCache())
+                .build();
+            return new DefaultDomainAwareServicesManager(context, new DefaultRegisteredServiceDomainExtractor());
         };
     }
 

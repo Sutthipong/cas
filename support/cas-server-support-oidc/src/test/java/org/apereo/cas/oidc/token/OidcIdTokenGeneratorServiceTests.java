@@ -47,7 +47,7 @@ import static org.mockito.Mockito.*;
  * @since 5.3.0
  */
 @Tag("OIDC")
-@TestPropertySource(properties = "cas.authn.oauth.accessToken.crypto.encryption-enabled=false")
+@TestPropertySource(properties = "cas.authn.oauth.access-token.crypto.encryption-enabled=false")
 public class OidcIdTokenGeneratorServiceTests extends AbstractOidcTests {
 
     private static final String OIDC_CLAIM_EMAIL = "email";
@@ -192,7 +192,7 @@ public class OidcIdTokenGeneratorServiceTests extends AbstractOidcTests {
             .registeredService(registeredService)
             .service(accessToken.getService())
             .casProperties(casProperties)
-            .accessTokenJwtBuilder(accessTokenJwtBuilder)
+            .accessTokenJwtBuilder(oidcAccessTokenJwtBuilder)
             .build()
             .encode();
         val newHash = OAuth20AccessTokenAtHashGenerator.builder()

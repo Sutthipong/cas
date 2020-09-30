@@ -1,6 +1,7 @@
 package org.apereo.cas.config;
 
 import org.apereo.cas.util.HttpUtils;
+import org.apereo.cas.util.LoggingUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
@@ -67,12 +68,12 @@ public class RestfulPropertySourceLocator implements PropertySourceLocator {
             response = HttpUtils.execute(url, method, basicAuthUsername, basicAuthPassword, headers);
             if (response != null && response.getEntity() != null) {
                 val results = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-                LOGGER.trace("Received response from endpoint [{}} as [{}]", url, results);
+                LOGGER.trace("Received response from endpoint [{}] as [{}]", url, results);
                 val payload = MAPPER.readValue(results, Map.class);
                 props.putAll(payload);
             }
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LoggingUtils.error(LOGGER, e);
         } finally {
             HttpUtils.close(response);
         }

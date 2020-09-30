@@ -20,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @TestPropertySource(properties = {
     "cas.authn.saml-idp.metadata.jpa.idp-metadata-enabled=true",
-    "cas.authn.saml-idp.metadata.jpa.ddlAuto=create-drop",
-    "cas.jdbc.showSql=true"
+    "cas.authn.saml-idp.metadata.jpa.ddl-auto=create-drop",
+    "cas.jdbc.show-sql=true"
 })
 @Tag("JDBC")
 public class JpaSamlIdPMetadataGeneratorTests extends BaseJpaSamlMetadataTests {

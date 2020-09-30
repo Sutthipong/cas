@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpHeaders;
-import org.junit.jupiter.api.Tag;
 import org.pac4j.core.context.JEEContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
@@ -52,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 6.0.0
  */
-@Tag("UMA")
 @Import({CasOAuthUmaConfiguration.class, CasOAuthUmaComponentSerializationConfiguration.class})
 @TestPropertySource(properties = "cas.authn.uma.requestingPartyToken.jwksFile=classpath:uma-keystore.jwks")
 @Slf4j
@@ -118,7 +116,7 @@ public abstract class BaseUmaEndpointControllerTests extends AbstractOAuth20Test
     }
 
     private Triple<HttpServletRequest, HttpServletResponse, String> authenticateUmaRequestWithScope(
-        final String scope, final SecurityInterceptor interceptor) throws Exception {
+        final String scope, final SecurityInterceptor interceptor) {
         val service = addRegisteredService();
         val pair = assertClientOK(service, false, scope);
         assertNotNull(pair.getKey());

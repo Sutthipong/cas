@@ -1,7 +1,9 @@
 package org.apereo.cas.adaptors.u2f.storage;
 
-import org.apereo.cas.configuration.model.support.mfa.U2FMultifactorProperties;
+import org.apereo.cas.configuration.model.support.mfa.u2f.U2FRestfulMultifactorProperties;
 import org.apereo.cas.util.HttpUtils;
+import org.apereo.cas.util.LoggingUtils;
+import org.apereo.cas.util.crypto.CipherExecutor;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,9 +12,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.springframework.http.HttpStatus;
 
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +36,14 @@ public class U2FRestResourceDeviceRepository extends BaseResourceU2FDeviceReposi
         .findAndRegisterModules()
         .enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
 
-    private final U2FMultifactorProperties.Rest restProperties;
+    private final U2FRestfulMultifactorProperties restProperties;
 
     public U2FRestResourceDeviceRepository(final LoadingCache<String, String> requestStorage,
-                                           final long expirationTime, final TimeUnit expirationTimeUnit,
-                                           final U2FMultifactorProperties.Rest restProperties) {
-        super(requestStorage, expirationTime, expirationTimeUnit);
+                                           final long expirationTime,
+                                           final TimeUnit expirationTimeUnit,
+                                           final U2FRestfulMultifactorProperties restProperties,
+                                           final CipherExecutor<Serializable, String> cipherExecutor) {
+        super(requestStorage, expirationTime, expirationTimeUnit, cipherExecutor);
         this.restProperties = restProperties;
     }
 
@@ -53,7 +59,7 @@ public class U2FRestResourceDeviceRepository extends BaseResourceU2FDeviceReposi
                     });
             }
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LoggingUtils.error(LOGGER, e);
         } finally {
             HttpUtils.close(response);
         }
@@ -72,7 +78,22 @@ public class U2FRestResourceDeviceRepository extends BaseResourceU2FDeviceReposi
                 restProperties.getBasicAuthPassword(),
                 writer.toString());
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LoggingUtils.error(LOGGER, e);
+        } finally {
+            HttpUtils.close(response);
+        }
+    }
+
+    @Override
+    public void deleteRegisteredDevice(final U2FDeviceRegistration registration) {
+        HttpResponse response = null;
+        try {
+            val url = StringUtils.appendIfMissing(restProperties.getUrl(), "/") + registration.getId();
+            response = HttpUtils.executeDelete(url,
+                restProperties.getBasicAuthUsername(),
+                restProperties.getBasicAuthPassword());
+        } catch (final Exception e) {
+            LoggingUtils.error(LOGGER, e);
         } finally {
             HttpUtils.close(response);
         }
@@ -86,7 +107,7 @@ public class U2FRestResourceDeviceRepository extends BaseResourceU2FDeviceReposi
                 restProperties.getBasicAuthUsername(),
                 restProperties.getBasicAuthPassword());
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LoggingUtils.error(LOGGER, e);
         } finally {
             HttpUtils.close(response);
         }

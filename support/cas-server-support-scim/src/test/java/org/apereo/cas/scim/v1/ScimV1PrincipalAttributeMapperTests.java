@@ -9,9 +9,12 @@ import com.unboundid.scim.schema.CoreSchema;
 import lombok.val;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 import java.net.URI;
 import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This is {@link ScimV1PrincipalAttributeMapperTests}.
@@ -19,7 +22,8 @@ import java.util.Date;
  * @author Misagh Moayyed
  * @since 5.3.0
  */
-@Tag("Simple")
+@Tag("Attributes")
+@SuppressWarnings("JdkObsolete")
 public class ScimV1PrincipalAttributeMapperTests {
     @Test
     public void verifyAction() throws Exception {
@@ -36,12 +40,13 @@ public class ScimV1PrincipalAttributeMapperTests {
         meta.setCreated(new Date());
         user.setMeta(meta);
 
-        try {
-            val mapper = new ScimV1PrincipalAttributeMapper();
-            mapper.map(user, CoreAuthenticationTestUtils.getPrincipal(),
-                CoreAuthenticationTestUtils.getCredentialsWithSameUsernameAndPassword());
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage(), e);
-        }
+        assertDoesNotThrow(new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                val mapper = new ScimV1PrincipalAttributeMapper();
+                mapper.map(user, CoreAuthenticationTestUtils.getPrincipal(),
+                    CoreAuthenticationTestUtils.getCredentialsWithSameUsernameAndPassword());
+            }
+        });
     }
 }

@@ -9,6 +9,7 @@ import org.apereo.cas.authentication.MultifactorAuthenticationUtils;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.RegisteredService;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.ResourceUtils;
 import org.apereo.cas.util.scripting.ExecutableCompiledGroovyScript;
 import org.apereo.cas.util.scripting.GroovyShellScript;
@@ -28,7 +29,6 @@ import org.springframework.core.Ordered;
 
 import javax.persistence.Transient;
 import javax.servlet.http.HttpServletRequest;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -42,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @deprecated Since 6.2
  */
 @Getter
-@Setter
 @Slf4j
 @RequiredArgsConstructor
 @Deprecated(since = "6.2.0")
@@ -51,6 +50,7 @@ public class ScriptedRegisteredServiceMultifactorAuthenticationTrigger implement
 
     private final ApplicationContext applicationContext;
 
+    @Setter
     private int order = Ordered.LOWEST_PRECEDENCE;
 
     @JsonIgnore
@@ -104,11 +104,7 @@ public class ScriptedRegisteredServiceMultifactorAuthenticationTrigger implement
                     scriptCache.put(mfaScript, script);
                     LOGGER.trace("Caching multifactor authentication trigger script as script resource [{}]", resource);
                 } catch (final Exception e) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.error(e.getMessage(), e);
-                    } else {
-                        LOGGER.error(e.getMessage());
-                    }
+                    LoggingUtils.error(LOGGER, e);
                 }
             }
         }

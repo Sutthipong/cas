@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Francesco Cina
  * @since 4.1
  */
-@Tag("Simple")
+@Tag("Web")
 public class HttpMessageTests {
 
     @Test
@@ -21,6 +21,7 @@ public class HttpMessageTests {
         assertTrue(new HttpMessage(new URL("http://www.google.com"), "messageToSend").isAsynchronous());
         assertTrue(new HttpMessage(new URL("http://www.google.com"), "messageToSend", true).isAsynchronous());
         assertFalse(new HttpMessage(new URL("http://www.google.com"), "messageToSend", false).isAsynchronous());
+        assertFalse(new HttpMessage(new URL("http://www.google.com"), null, false).isAsynchronous());
     }
 
 }

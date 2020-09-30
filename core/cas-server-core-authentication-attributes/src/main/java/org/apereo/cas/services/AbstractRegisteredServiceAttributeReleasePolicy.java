@@ -11,6 +11,7 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.spring.ApplicationContextProvider;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,8 +23,6 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.PostLoad;
-
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -39,9 +38,9 @@ import java.util.TreeMap;
 @ToString
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public abstract class AbstractRegisteredServiceAttributeReleasePolicy implements RegisteredServiceAttributeReleasePolicy {
 
     private static final long serialVersionUID = 5325460875620586503L;
@@ -111,7 +110,7 @@ public abstract class AbstractRegisteredServiceAttributeReleasePolicy implements
             LOGGER.debug("Ignoring default attribute policy attributes");
         } else {
             LOGGER.trace("Checking default attribute policy attributes");
-            val defaultAttributes = getReleasedByDefaultAttributes(principal, policyAttributes);
+            val defaultAttributes = getReleasedByDefaultAttributes(principal, attributesFromDefinitions);
             LOGGER.debug("Default attributes found to be released are [{}]", defaultAttributes);
             if (!defaultAttributes.isEmpty()) {
                 LOGGER.debug("Adding default attributes first to the released set of attributes");
@@ -132,10 +131,6 @@ public abstract class AbstractRegisteredServiceAttributeReleasePolicy implements
 
     @Override
     public Map<String, List<Object>> getConsentableAttributes(final Principal p, final Service selectedService, final RegisteredService service) {
-        if (this.consentPolicy != null && !this.consentPolicy.isEnabled()) {
-            LOGGER.debug("Consent is disabled for service [{}]", service);
-            return new LinkedHashMap<>(0);
-        }
         val attributes = getAttributes(p, selectedService, service);
         LOGGER.debug("Initial set of consentable attributes are [{}]", attributes);
         if (this.consentPolicy != null) {
@@ -213,9 +208,12 @@ public abstract class AbstractRegisteredServiceAttributeReleasePolicy implements
                                                         final Service service, final RegisteredService registeredService) {
         if (StringUtils.isNotBlank(getPrincipalIdAttribute())) {
             LOGGER.debug("Attempting to resolve the principal id for service [{}]", registeredService.getServiceId());
-            val id = registeredService.getUsernameAttributeProvider().resolveUsername(principal, service, registeredService);
-            LOGGER.debug("Releasing resolved principal id [{}] as attribute [{}]", id, getPrincipalIdAttribute());
-            attributesToRelease.put(getPrincipalIdAttribute(), CollectionUtils.wrapList(principal.getId()));
+            val usernameProvider = registeredService.getUsernameAttributeProvider();
+            if (usernameProvider != null) {
+                val id = usernameProvider.resolveUsername(principal, service, registeredService);
+                LOGGER.debug("Releasing resolved principal id [{}] as attribute [{}]", id, getPrincipalIdAttribute());
+                attributesToRelease.put(getPrincipalIdAttribute(), CollectionUtils.wrapList(principal.getId()));
+            }
         }
     }
 

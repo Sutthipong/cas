@@ -3,6 +3,7 @@ package org.apereo.cas.services;
 import org.apereo.cas.authentication.principal.Principal;
 import org.apereo.cas.authentication.principal.Service;
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.scripting.ScriptingUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,7 +35,7 @@ import java.util.regex.Matcher;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @Deprecated(since = "6.2.0")
 public class ScriptedRegisteredServiceAttributeReleasePolicy extends AbstractRegisteredServiceAttributeReleasePolicy {
 
@@ -62,7 +63,7 @@ public class ScriptedRegisteredServiceAttributeReleasePolicy extends AbstractReg
             }
             return getScriptedAttributesFromFile(attributes);
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LoggingUtils.error(LOGGER, e);
         }
         return new HashMap<>(0);
     }

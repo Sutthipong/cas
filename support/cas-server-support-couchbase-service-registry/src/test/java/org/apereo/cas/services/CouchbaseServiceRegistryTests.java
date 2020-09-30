@@ -1,10 +1,12 @@
 package org.apereo.cas.services;
 
+import org.apereo.cas.config.CasCoreNotificationsConfiguration;
 import org.apereo.cas.config.CasCoreServicesConfiguration;
 import org.apereo.cas.config.CasCoreUtilConfiguration;
 import org.apereo.cas.config.CouchbaseServiceRegistryConfiguration;
 import org.apereo.cas.util.junit.EnabledIfPortOpen;
 
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInstance;
@@ -29,12 +31,13 @@ import org.springframework.context.event.EventListener;
     CouchbaseServiceRegistryTests.CouchbaseServiceRegistryTestConfiguration.class,
     RefreshAutoConfiguration.class,
     CasCoreServicesConfiguration.class,
+    CasCoreNotificationsConfiguration.class,
     CasCoreUtilConfiguration.class,
     CouchbaseServiceRegistryConfiguration.class
 },
     properties = {
-        "cas.service-registry.couchbase.clusterPassword=password",
-        "cas.service-registry.couchbase.clusterUsername=admin",
+        "cas.service-registry.couchbase.cluster-password=password",
+        "cas.service-registry.couchbase.cluster-username=admin",
         "cas.service-registry.couchbase.bucket=testbucket"
     })
 @Tag("Couchbase")
@@ -42,16 +45,12 @@ import org.springframework.context.event.EventListener;
 @Execution(ExecutionMode.SAME_THREAD)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ResourceLock("Couchbase")
+@Getter
 public class CouchbaseServiceRegistryTests extends AbstractServiceRegistryTests {
 
     @Autowired
     @Qualifier("couchbaseServiceRegistry")
-    private ServiceRegistry serviceRegistry;
-
-    @Override
-    public ServiceRegistry getNewServiceRegistry() {
-        return serviceRegistry;
-    }
+    private ServiceRegistry newServiceRegistry;
 
     @TestConfiguration("CouchbaseServiceRegistryTestConfiguration")
     @Lazy(false)

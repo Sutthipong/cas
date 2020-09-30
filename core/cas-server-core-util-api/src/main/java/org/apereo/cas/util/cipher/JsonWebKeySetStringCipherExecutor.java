@@ -1,5 +1,6 @@
 package org.apereo.cas.util.cipher;
 
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.io.FileWatcherService;
 
 import lombok.Setter;
@@ -33,7 +34,9 @@ import java.util.function.Predicate;
 @Setter
 public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor implements AutoCloseable, DisposableBean {
     private final FileWatcherService keystorePatchWatcherService;
+
     private final Optional<String> keyIdToUse;
+
     private final Optional<HttpsJwks> httpsJkws;
 
     private JsonWebKeySet webKeySet;
@@ -60,11 +63,7 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
                 val reloadedJson = FileUtils.readFileToString(jwksKeystore, StandardCharsets.UTF_8);
                 this.webKeySet = new JsonWebKeySet(reloadedJson);
             } catch (final Exception e) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.error(e.getMessage(), e);
-                } else {
-                    LOGGER.error(e.getMessage());
-                }
+                LoggingUtils.error(LOGGER, e);
             }
         });
 
@@ -181,7 +180,7 @@ public class JsonWebKeySetStringCipherExecutor extends BaseStringCipherExecutor 
     private Optional<RsaJsonWebKey> findRsaJsonWebKeyByProvidedKeyId(final List<JsonWebKey> keys) {
         val predicate = this.keyIdToUse
             .<Predicate<JsonWebKey>>map(s -> jsonWebKey -> jsonWebKey.getKeyId()
-            .equalsIgnoreCase(s))
+                .equalsIgnoreCase(s))
             .orElseGet(() -> jsonWebKey -> true);
         return findRsaJsonWebKey(keys, predicate);
     }

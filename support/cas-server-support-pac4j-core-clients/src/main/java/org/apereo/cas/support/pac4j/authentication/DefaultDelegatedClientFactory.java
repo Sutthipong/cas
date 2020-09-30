@@ -7,6 +7,7 @@ import org.apereo.cas.configuration.model.support.pac4j.oidc.BasePac4jOidcClient
 import org.apereo.cas.configuration.model.support.pac4j.oidc.Pac4jOidcClientProperties;
 import org.apereo.cas.configuration.model.support.pac4j.saml.Pac4jSamlClientProperties;
 import org.apereo.cas.configuration.support.Beans;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.RandomUtils;
 
 import com.github.scribejava.core.model.Verb;
@@ -77,6 +78,7 @@ public class DefaultDelegatedClientFactory implements DelegatedClientFactory<Ind
             cfg.setScope(oidc.getScope());
         }
         cfg.setUseNonce(oidc.isUseNonce());
+        cfg.setDisablePkce(oidc.isDisablePkce());
         cfg.setSecret(oidc.getSecret());
         cfg.setClientId(oidc.getId());
         cfg.setReadTimeout((int) Beans.newDuration(oidc.getReadTimeout()).toMillis());
@@ -422,6 +424,7 @@ public class DefaultDelegatedClientFactory implements DelegatedClientFactory<Ind
                     cfg.setAttributeAsId(saml.getPrincipalIdAttribute());
                 }
                 cfg.setWantsAssertionsSigned(saml.isWantsAssertionsSigned());
+                cfg.setWantsResponsesSigned(saml.isWantsResponsesSigned());
                 cfg.setAllSignatureValidationDisabled(saml.isAllSignatureValidationDisabled());
                 cfg.setUseNameQualifier(saml.isUseNameQualifier());
                 cfg.setAttributeConsumingServiceIndex(saml.getAttributeConsumingServiceIndex());
@@ -432,7 +435,8 @@ public class DefaultDelegatedClientFactory implements DelegatedClientFactory<Ind
                     cfg.setSamlMessageStoreFactory(
                         SAMLMessageStoreFactory.class.cast(clazz.getDeclaredConstructor().newInstance()));
                 } catch (final Exception e) {
-                    LOGGER.error("Unable to instantiate message store factory class [{}]", saml.getMessageStoreFactory(), e);
+                    LOGGER.error("Unable to instantiate message store factory class [{}]", saml.getMessageStoreFactory());
+                    LoggingUtils.error(LOGGER, e);
                 }
 
                 if (saml.getAssertionConsumerServiceIndex() >= 0) {
@@ -456,8 +460,8 @@ public class DefaultDelegatedClientFactory implements DelegatedClientFactory<Ind
                         .forEach(attribute -> cfg.getRequestedServiceProviderAttributes().add(attribute));
                 }
 
-                if (!saml.getBlackListedSignatureSigningAlgorithms().isEmpty()) {
-                    cfg.setBlackListedSignatureSigningAlgorithms(saml.getBlackListedSignatureSigningAlgorithms());
+                if (!saml.getBlockedSignatureSigningAlgorithms().isEmpty()) {
+                    cfg.setBlackListedSignatureSigningAlgorithms(saml.getBlockedSignatureSigningAlgorithms());
                 }
                 if (!saml.getSignatureAlgorithms().isEmpty()) {
                     cfg.setSignatureAlgorithms(saml.getSignatureAlgorithms());
@@ -520,6 +524,8 @@ public class DefaultDelegatedClientFactory implements DelegatedClientFactory<Ind
                 client.setAuthUrl(oauth.getAuthUrl());
                 client.setScope(oauth.getScope());
                 client.setCustomParams(oauth.getCustomParams());
+                client.getConfiguration().setResponseType(oauth.getResponseType());
+
                 if (StringUtils.isBlank(oauth.getClientName())) {
                     val count = index.intValue();
                     client.setName(client.getClass().getSimpleName() + count);

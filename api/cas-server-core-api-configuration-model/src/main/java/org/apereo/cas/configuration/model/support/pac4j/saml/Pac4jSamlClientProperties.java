@@ -2,10 +2,12 @@ package org.apereo.cas.configuration.model.support.pac4j.saml;
 
 import org.apereo.cas.configuration.model.support.pac4j.Pac4jBaseClientProperties;
 import org.apereo.cas.configuration.support.Beans;
+import org.apereo.cas.configuration.support.CasFeatureModule;
 import org.apereo.cas.configuration.support.RequiredProperty;
 import org.apereo.cas.configuration.support.RequiresModule;
 import org.apereo.cas.util.model.TriStateBoolean;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -24,7 +26,8 @@ import java.util.List;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class Pac4jSamlClientProperties extends Pac4jBaseClientProperties {
+@JsonFilter("Pac4jSamlClientProperties")
+public class Pac4jSamlClientProperties extends Pac4jBaseClientProperties implements CasFeatureModule {
 
     private static final long serialVersionUID = -862819796533384951L;
 
@@ -150,6 +153,11 @@ public class Pac4jSamlClientProperties extends Pac4jBaseClientProperties {
      * Whether metadata should be marked to request sign assertions.
      */
     private boolean wantsAssertionsSigned;
+    
+    /**
+     * Whether a response has to be mandatory signed.
+     */
+    private boolean wantsResponsesSigned;
 
     /**
      * Whether the signature validation should be disabled.
@@ -207,9 +215,9 @@ public class Pac4jSamlClientProperties extends Pac4jBaseClientProperties {
     private List<ServiceProviderRequestedAttribute> requestedAttributes = new ArrayList<>(0);
 
     /**
-     * Collection of signing signature blacklisted algorithms, if any, to override the global defaults.
+     * Collection of signing signature blocked algorithms, if any, to override the global defaults.
      */
-    private List<String> blackListedSignatureSigningAlgorithms = new ArrayList<>(0);
+    private List<String> blockedSignatureSigningAlgorithms = new ArrayList<>(0);
 
     /**
      * Collection of signing signature algorithms, if any, to override the global defaults.

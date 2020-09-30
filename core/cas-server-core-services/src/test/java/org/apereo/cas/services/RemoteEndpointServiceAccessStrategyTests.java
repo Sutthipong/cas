@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
-@Tag("Simple")
+@Tag("RegisteredService")
 public class RemoteEndpointServiceAccessStrategyTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "remoteEndpointServiceAccessStrategy.json");
@@ -44,8 +44,18 @@ public class RemoteEndpointServiceAccessStrategyTests {
             new ByteArrayResource("OK".getBytes(StandardCharsets.UTF_8), "REST Output"), MediaType.APPLICATION_JSON_VALUE)) {
             webServer.start();
             assertTrue(strategy.doPrincipalAttributesAllowServiceAccess("casuser", CoreAuthenticationTestUtils.getAttributes()));
-        } catch (final Exception e) {
-            throw new AssertionError(e.getMessage(), e);
+        }
+    }
+
+    @Test
+    public void verifyFails() {
+        val strategy = new RemoteEndpointServiceAccessStrategy();
+        strategy.setEndpointUrl("http://localhost:1234");
+        strategy.setAcceptableResponseCodes("600");
+        try (val webServer = new MockWebServer(8756,
+            new ByteArrayResource("OK".getBytes(StandardCharsets.UTF_8), "REST Output"), MediaType.APPLICATION_JSON_VALUE)) {
+            webServer.start();
+            assertFalse(strategy.doPrincipalAttributesAllowServiceAccess("casuser", CoreAuthenticationTestUtils.getAttributes()));
         }
     }
 }

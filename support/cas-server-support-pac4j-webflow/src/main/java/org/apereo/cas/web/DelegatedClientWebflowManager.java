@@ -104,6 +104,8 @@ public class DelegatedClientWebflowManager {
             config.setStateGenerator(new StaticValueGenerator(ticketId));
         }
         if (client instanceof CasClient) {
+            val casClient = (CasClient) client;
+            casClient.getConfiguration().addCustomParam(PARAMETER_CLIENT_ID, ticketId);
             sessionStore.set(webContext, CAS_CLIENT_ID_SESSION_KEY, ticket.getId());
         }
         if (client instanceof OAuth10Client) {
@@ -189,11 +191,6 @@ public class DelegatedClientWebflowManager {
     protected TransientSessionTicket retrieveSessionTicketViaClientId(final WebContext webContext, final String clientId) {
         try {
             val ticket = this.centralAuthenticationService.getTicket(clientId, TransientSessionTicket.class);
-            if (ticket.isExpired()) {
-                LOGGER.error("Delegated client identifier [{}] has expired in the authentication request", ticket.getId());
-                this.centralAuthenticationService.deleteTicket(ticket.getId());
-                throw new UnauthorizedServiceException(UnauthorizedServiceException.CODE_UNAUTHZ_SERVICE, StringUtils.EMPTY);
-            }
             LOGGER.debug("Located delegated authentication client identifier as [{}]", ticket.getId());
             return ticket;
         } catch (final Exception e) {

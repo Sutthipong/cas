@@ -3,6 +3,7 @@ package org.apereo.cas.ticket.registry;
 import org.apereo.cas.config.HazelcastTicketRegistryConfiguration;
 import org.apereo.cas.config.HazelcastTicketRegistryTicketCatalogConfiguration;
 
+import lombok.Getter;
 import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,16 +19,11 @@ import org.springframework.boot.test.context.SpringBootTest;
     HazelcastTicketRegistryConfiguration.class,
     HazelcastTicketRegistryTicketCatalogConfiguration.class,
     BaseTicketRegistryTests.SharedTestConfiguration.class
-}, properties = "cas.ticket.registry.hazelcast.cluster.instanceName=testlocalhostinstance")
+}, properties = "cas.ticket.registry.hazelcast.cluster.instance-name=testlocalhostinstance")
 @Tag("Hazelcast")
+@Getter
 public class HazelcastTicketRegistryTests extends BaseTicketRegistryTests {
-
     @Autowired
     @Qualifier("ticketRegistry")
-    private TicketRegistry ticketRegistry;
-
-    @Override
-    public TicketRegistry getNewTicketRegistry() {
-        return ticketRegistry;
-    }
+    private TicketRegistry newTicketRegistry;
 }

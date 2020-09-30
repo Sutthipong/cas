@@ -2,10 +2,12 @@ package org.apereo.cas.web.report;
 
 import org.apereo.cas.CentralAuthenticationService;
 import org.apereo.cas.configuration.CasConfigurationProperties;
+import org.apereo.cas.ticket.InvalidTicketException;
 import org.apereo.cas.ticket.Ticket;
 import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.util.DateTimeUtils;
 import org.apereo.cas.util.ISOStandardDateFormat;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.web.BaseCasActuatorEndpoint;
 
 import lombok.Getter;
@@ -154,15 +156,13 @@ public class SingleSignOnSessionsEndpoint extends BaseCasActuatorEndpoint {
 
         val sessionsMap = new HashMap<String, Object>(1);
         try {
-            this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket);
+            if (centralAuthenticationService.deleteTicket(ticketGrantingTicket) == 0) {
+                throw new InvalidTicketException(ticketGrantingTicket);
+            }
             sessionsMap.put(STATUS, HttpServletResponse.SC_OK);
             sessionsMap.put(TICKET_GRANTING_TICKET, ticketGrantingTicket);
         } catch (final Exception e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(e.getMessage(), e);
-            } else {
-                LOGGER.error(e.getMessage());
-            }
+            LoggingUtils.error(LOGGER, e);
             sessionsMap.put(STATUS, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             sessionsMap.put(TICKET_GRANTING_TICKET, ticketGrantingTicket);
             sessionsMap.put("message", e.getMessage());
@@ -179,7 +179,6 @@ public class SingleSignOnSessionsEndpoint extends BaseCasActuatorEndpoint {
      */
     @DeleteOperation
     public Map<String, Object> destroySsoSessions(@Nullable final String type, @Nullable final String username) {
-
         if (StringUtils.isBlank(username) && StringUtils.isBlank(type)) {
             return Map.of(STATUS, HttpServletResponse.SC_BAD_REQUEST);
         }
@@ -201,13 +200,9 @@ public class SingleSignOnSessionsEndpoint extends BaseCasActuatorEndpoint {
             .map(sso -> sso.get(SsoSessionAttributeKeys.TICKET_GRANTING_TICKET.toString()).toString())
             .forEach(ticketGrantingTicket -> {
                 try {
-                    this.centralAuthenticationService.destroyTicketGrantingTicket(ticketGrantingTicket);
+                    centralAuthenticationService.deleteTicket(ticketGrantingTicket);
                 } catch (final Exception e) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.error(e.getMessage(), e);
-                    } else {
-                        LOGGER.error(e.getMessage());
-                    }
+                    LoggingUtils.error(LOGGER, e);
                     failedTickets.put(ticketGrantingTicket, e.getMessage());
                 }
             });

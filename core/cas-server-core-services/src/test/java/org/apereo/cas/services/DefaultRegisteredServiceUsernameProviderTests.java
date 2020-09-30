@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 4.1.0
  */
-@Tag("Simple")
+@Tag("RegisteredService")
 public class DefaultRegisteredServiceUsernameProviderTests {
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "defaultRegisteredServiceUsernameProvider.json");
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
@@ -50,8 +50,7 @@ public class DefaultRegisteredServiceUsernameProviderTests {
 
     @Test
     public void verifyRegServiceUsernameUpper() {
-        val provider = new DefaultRegisteredServiceUsernameProvider();
-        provider.setCanonicalizationMode(CaseCanonicalizationMode.UPPER.name());
+        val provider = new DefaultRegisteredServiceUsernameProvider(CaseCanonicalizationMode.UPPER.name());
         val principal = mock(Principal.class);
         when(principal.getId()).thenReturn("id");
         val id = provider.resolveUsername(principal, RegisteredServiceTestUtils.getService(),

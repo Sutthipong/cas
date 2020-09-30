@@ -7,7 +7,6 @@ import org.apereo.cas.ticket.AbstractTicketException;
 import org.apereo.cas.ticket.ExpirationPolicyBuilder;
 import org.apereo.cas.ticket.ServiceTicket;
 import org.apereo.cas.ticket.Ticket;
-import org.apereo.cas.ticket.TicketFactory;
 import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.ticket.UniqueTicketIdGenerator;
 import org.apereo.cas.ticket.expiration.HardTimeoutExpirationPolicy;
@@ -57,6 +56,11 @@ public class DefaultProxyGrantingTicketFactory implements ProxyGrantingTicketFac
         return produceTicket(serviceTicket, authentication, pgtId, clazz);
     }
 
+    @Override
+    public Class<? extends Ticket> getTicketType() {
+        return ProxyGrantingTicket.class;
+    }
+
     /**
      * Produce ticket.
      *
@@ -91,7 +95,7 @@ public class DefaultProxyGrantingTicketFactory implements ProxyGrantingTicketFac
      * @return the expiration policy
      */
     protected RegisteredServiceProxyGrantingTicketExpirationPolicy getProxyGrantingTicketExpirationPolicy(
-            final ServiceTicket serviceTicket) {
+        final ServiceTicket serviceTicket) {
         val service = servicesManager.findServiceBy(serviceTicket.getService());
         if (service != null) {
             return service.getProxyGrantingTicketExpirationPolicy();
@@ -109,19 +113,19 @@ public class DefaultProxyGrantingTicketFactory implements ProxyGrantingTicketFac
      * @return the ticket
      */
     protected ProxyGrantingTicket produceTicketWithAdequateExpirationPolicy(
-            final RegisteredServiceProxyGrantingTicketExpirationPolicy servicePgtPolicy,
-            final ServiceTicket serviceTicket,
-            final Authentication authentication,
-            final String pgtId) {
+        final RegisteredServiceProxyGrantingTicketExpirationPolicy servicePgtPolicy,
+        final ServiceTicket serviceTicket,
+        final Authentication authentication,
+        final String pgtId) {
         if (servicePgtPolicy != null) {
             LOGGER.trace("Overriding proxy-granting ticket policy with the specific policy: [{}]", servicePgtPolicy);
             return serviceTicket.grantProxyGrantingTicket(pgtId, authentication,
-                    new HardTimeoutExpirationPolicy(servicePgtPolicy.getMaxTimeToLiveInSeconds()));
-        } 
+                new HardTimeoutExpirationPolicy(servicePgtPolicy.getMaxTimeToLiveInSeconds()));
+        }
         LOGGER.trace("Using default ticket-granting ticket policy for proxy-granting ticket");
         return serviceTicket.grantProxyGrantingTicket(pgtId, authentication,
             this.ticketGrantingTicketExpirationPolicy.buildTicketExpirationPolicy());
-        
+
     }
 
     /**
@@ -131,17 +135,12 @@ public class DefaultProxyGrantingTicketFactory implements ProxyGrantingTicketFac
      */
     protected String produceTicketIdentifier() {
         val pgtId = this.ticketGrantingTicketUniqueTicketIdGenerator.getNewTicketId(ProxyGrantingTicket.PROXY_GRANTING_TICKET_PREFIX);
-        if (this.cipherExecutor == null) {
+        if (cipherExecutor == null || !cipherExecutor.isEnabled()) {
             return pgtId;
         }
         LOGGER.debug("Attempting to encode proxy-granting ticket [{}]", pgtId);
         val pgtEncoded = this.cipherExecutor.encode(pgtId);
         LOGGER.debug("Encoded proxy-granting ticket id [{}]", pgtEncoded);
         return pgtEncoded;
-    }
-
-    @Override
-    public TicketFactory get(final Class<? extends Ticket> clazz) {
-        return this;
     }
 }

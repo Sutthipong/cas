@@ -3,6 +3,7 @@ package org.apereo.cas.mfa.accepto.web.flow;
 import org.apereo.cas.authentication.AuthenticationException;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.mfa.accepto.AccepttoApiUtils;
+import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.web.support.WebUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -81,7 +82,7 @@ public class AccepttoMultifactorFetchChannelAction extends AbstractAction {
             val existingChannel = AccepttoWebflowUtils.getChannel(requestContext);
             if (existingChannel.isPresent()) {
                 val channel = existingChannel.get();
-                LOGGER.debug("Using existing channel retrieved as [{}}", channel);
+                LOGGER.debug("Using existing channel retrieved as [{}]", channel);
                 return channel;
             }
 
@@ -99,11 +100,7 @@ public class AccepttoMultifactorFetchChannelAction extends AbstractAction {
                 return channel;
             }
         } catch (final Exception e) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.error(e.getMessage(), e);
-            } else {
-                LOGGER.error(e.getMessage());
-            }
+            LoggingUtils.error(LOGGER, e);
         }
         throw new AuthenticationException("Unable to fetch channel for user");
     }

@@ -17,7 +17,6 @@ import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.EncodingUtils;
 import org.apereo.cas.util.crypto.CipherExecutor;
 import org.apereo.cas.util.crypto.PrivateKeyFactoryBean;
-import org.apereo.cas.validation.DefaultServiceTicketValidationAuthorizersExecutionPlan;
 import org.apereo.cas.web.AbstractServiceValidateController;
 import org.apereo.cas.web.AbstractServiceValidateControllerTests;
 import org.apereo.cas.web.ServiceValidateConfigurationContext;
@@ -53,7 +52,6 @@ import org.springframework.web.servlet.support.RequestContext;
 import javax.crypto.Cipher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
@@ -69,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext
 @Slf4j
 @SpringBootTest(properties = {
-    "cas.clearpass.cacheCredential=true",
+    "cas.clearpass.cache-credential=true",
     "cas.clearpass.crypto.enabled=false"
 },
     classes = {
@@ -79,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.*;
         CasThymeleafConfiguration.class,
         CasValidationConfiguration.class
     })
-@Tag("Simple")
+@Tag("CAS")
 public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTests {
 
     @Autowired
@@ -117,12 +115,12 @@ public class Cas30ResponseViewTests extends AbstractServiceValidateControllerTes
             .validationSpecifications(CollectionUtils.wrapSet(getValidationSpecification()))
             .authenticationSystemSupport(getAuthenticationSystemSupport())
             .servicesManager(getServicesManager())
-            .centralAuthenticationService(getCentralAuthenticationService().getObject())
+            .centralAuthenticationService(getCentralAuthenticationService())
             .argumentExtractor(getArgumentExtractor())
             .proxyHandler(getProxyHandler())
             .requestedContextValidator((assertion, request) -> Pair.of(Boolean.TRUE, Optional.empty()))
             .authnContextAttribute("authenticationContext")
-            .validationAuthorizers(new DefaultServiceTicketValidationAuthorizersExecutionPlan())
+            .validationAuthorizers(getServiceValidationAuthorizers())
             .renewEnabled(true)
             .validationViewFactory(serviceValidationViewFactory)
             .build();

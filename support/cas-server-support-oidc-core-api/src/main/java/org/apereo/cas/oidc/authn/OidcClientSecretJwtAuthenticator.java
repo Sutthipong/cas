@@ -7,6 +7,7 @@ import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.support.oauth.OAuth20Constants;
 import org.apereo.cas.ticket.registry.TicketRegistry;
+import org.apereo.cas.util.LoggingUtils;
 
 import com.nimbusds.jose.Algorithm;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -54,7 +55,6 @@ public class OidcClientSecretJwtAuthenticator extends BaseOidcJwtAuthenticator {
             return;
         }
         try {
-
             val params = new HashMap<String, List<String>>();
             params.put(OAuth20Constants.CLIENT_ASSERTION_TYPE, List.of(OAuth20Constants.CLIENT_ASSERTION_TYPE_JWT_BEARER));
             params.put(OAuth20Constants.CLIENT_ASSERTION, List.of(credentials.getPassword()));
@@ -63,7 +63,7 @@ public class OidcClientSecretJwtAuthenticator extends BaseOidcJwtAuthenticator {
             userProfile.setId(jwt.getClientID().getValue());
             credentials.setUserProfile(userProfile);
         } catch (final Exception e) {
-            LOGGER.warn(e.getMessage(), e);
+            LoggingUtils.warn(LOGGER, e);
         }
 
     }

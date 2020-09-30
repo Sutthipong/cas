@@ -60,29 +60,57 @@
                         </span>
                     </section>
 
+
                     <section class="cas-field my-3">
-                        <div class="mdc-text-field  d-flex">
-                            <input class="mdc-text-field__input"
-                                id="username"
-                                size="25"
-                                type="text"
-                                th:readonly="!${@casThymeleafLoginFormDirector.isLoginFormUsernameInputVisible(#vars)}"
-                                th:disabled="${@casThymeleafLoginFormDirector.isLoginFormUsernameInputDisabled(#vars)}"
-                                th:field="*{username}"
-                                th:accesskey="#{screen.welcome.label.netid.accesskey}"
-                                th:value="${@casThymeleafLoginFormDirector.getLoginFormUsername(#vars)}"
-                                autocomplete="off" />
-                            <label for="username" class="mdc-floating-label" th:utext="#{screen.welcome.label.netid}">Username</label>
+
+                        <div class="d-flex">
+
+                            <label for="username" class="mdc-text-field mdc-text-field--outlined">
+                                <input class="mdc-text-field__input"
+                                    id="username"
+                                    size="25"
+                                    type="text"
+                                    th:readonly="!${@casThymeleafLoginFormDirector.isLoginFormUsernameInputVisible(#vars)}"
+                                    th:disabled="${@casThymeleafLoginFormDirector.isLoginFormUsernameInputDisabled(#vars)}"
+                                    th:field="*{username}"
+                                    th:accesskey="#{screen.welcome.label.netid.accesskey}"
+                                    th:value="${@casThymeleafLoginFormDirector.getLoginFormUsername(#vars)}"
+                                    autocomplete="off" />
+
+                                <span class="mdc-notched-outline">
+                                <span class="mdc-notched-outline__leading"></span>
+                                <span class="mdc-notched-outline__notch">
+                                  <span class="mdc-floating-label" th:utext="#{screen.welcome.label.netid}">Username</span>
+                                </span>
+                                <span class="mdc-notched-outline__trailing"></span>
+                              </span>
+                            </label>
                         </div>
                     </section>
 
                     <section class="cas-field my-3 mdc-input-group">
                         <div class="mdc-input-group-field mdc-input-group-field-append">
-                            <div class="mdc-text-field  mdc-text-field--with-trailing-icon d-flex caps-check">
-                                <input class="mdc-text-field__input pwd" type="password" id="password" size="25"
-                                    th:accesskey="#{screen.welcome.label.password.accesskey}" th:field="*{password}" autocomplete="off" />
-                                <label for="username" class="mdc-floating-label" th:utext="#{screen.welcome.label.password}">Password</label>
+                            <div class="d-flex caps-check">
+
+                                <label for="password"
+                                       class="mdc-text-field mdc-text-field--outlined mdc-text-field--with-trailing-icon">
+
+                                    <input class="mdc-text-field__input pwd"
+                                           type="password" id="password" size="25"
+                                           th:accesskey="#{screen.welcome.label.password.accesskey}"
+                                           th:field="*{password}" autocomplete="off" />
+                                    
+                                    <span class="mdc-notched-outline">
+                                        <span class="mdc-notched-outline__leading"></span>
+                                        <span class="mdc-notched-outline__notch">
+                                          <span class="mdc-floating-label" th:utext="#{screen.welcome.label.password}">Username</span>
+                                        </span>
+                                        <span class="mdc-notched-outline__trailing"></span>
+                                    </span>
+                                    
+                                </label>
                             </div>
+                            
                             <div class="mdc-text-field-helper-line caps-warn">
                                 <p
                                     class="mdc-text-field-helper-text mdc-text-field-helper-text--persistent mdc-text-field-helper-text--validation-msg text-danger">
@@ -123,14 +151,9 @@
                     </section>
 
                     <section class="cas-field">
-                        <span th:if="${recaptchaVersion=='v2'}" th:remove="tag">
-                            <section class="form-group" th:if="${recaptchaSiteKey != null AND recaptchaInvisible != null AND !recaptchaInvisible}">
-                                <div class="g-recaptcha" th:attr="data-sitekey=${recaptchaSiteKey}"/>
-                            </section>
-                        </span>
-                        <span th:if="${recaptchaVersion=='v3'}" th:remove="tag">
-                              <input type="hidden" id="g-recaptcha-token" name="g-recaptcha-token"/>
-                        </span>
+
+                        <div th:replace="fragments/recaptcha :: recaptchaToken" />
+
                         <input type="hidden" name="execution" th:value="${flowExecutionKey}"/>
                         <input type="hidden" name="_eventId" value="submit"/>
                         <input type="hidden" name="geolocation"/>
@@ -143,49 +166,9 @@
                             </span>
                         </p>
                     </section>
+                    
+                    <div th:replace="fragments/submitbutton :: submitButton (messageKey='screen.welcome.button.login')" />
 
-                    <button
-                        class="mdc-button mdc-button--raised"
-                        th:if="${recaptchaSiteKey == null}"
-                        name="submit"
-                        accesskey="l"
-                        type="submit">
-                        <span class="mdc-button__label" th:text="#{screen.welcome.button.login}">Login</span>
-                    </button>
-
-                    <span th:unless="${recaptchaSiteKey == null}" th:switch="${recaptchaVersion}">
-                        <span th:case="'v2'" th:remove="tag">
-                            <button th:unless="${recaptchaSiteKey != null AND recaptchaInvisible != null AND recaptchaInvisible}"
-                                   class="mdc-button mdc-button--raised"
-                                   name="submit"
-                                   accesskey="l"
-                                   type="submit"
-                                   value="Login3">
-                                <span class="mdc-button__label" th:text="#{screen.welcome.button.login}">Login</span>
-                            </button>
-                            <button th:if="${recaptchaSiteKey != null AND recaptchaInvisible != null AND recaptchaInvisible}"
-                                    class="mdc-button mdc-button--raised"
-                                    th:attr="data-sitekey=${recaptchaSiteKey}, data-badge=${recaptchaPosition}"
-                                    data-callback="onRecaptchaV2Submit"
-                                    name="submitBtn"
-                                    accesskey="l">
-                                <span class="mdc-button__label" th:text="#{screen.welcome.button.login}"></span>
-                            </button>
-                        </span>
-
-                        <span th:case="'v3'" th:remove="tag">
-                            <button class="mdc-button mdc-button--raised"
-                                   th:if="${recaptchaSiteKey != null}"
-                                   name="submit"
-                                   th:attr="data-sitekey=${recaptchaSiteKey}"
-                                   accesskey="l"
-                                   th:value="#{screen.welcome.button.login}"
-                                   type="submit"
-                                   value="Login3">
-                                <span class="mdc-button__label" th:text="#{screen.welcome.button.login}"></span>
-                            </button>
-                         </span>
-                    </span>
                 </form>
 
                 <hr class="my-4" />

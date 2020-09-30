@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
     ThymeleafAutoConfiguration.class
 })
 @EnableConfigurationProperties(CasConfigurationProperties.class)
-@Tag("Simple")
+@Tag("Web")
 public class ThemeClassLoaderTemplateResolverTests {
     @Autowired
     private CasConfigurationProperties casProperties;
@@ -50,7 +50,7 @@ public class ThemeClassLoaderTemplateResolverTests {
     }
 
     @Test
-    public void verifyOperationBySessionAttribute() throws Exception {
+    public void verifyOperationBySessionAttribute() {
         val request = new MockHttpServletRequest();
         val paramName = casProperties.getTheme().getParamName();
         request.getSession(true).setAttribute(paramName, "test");

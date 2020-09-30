@@ -2,9 +2,7 @@ package org.apereo.cas.ticket.expiration;
 
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.services.RegisteredServiceTestUtils;
-import org.apereo.cas.ticket.TicketGrantingTicket;
 import org.apereo.cas.ticket.TicketGrantingTicketImpl;
-import org.apereo.cas.ticket.TicketState;
 import org.apereo.cas.util.serialization.SerializationUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Scott Battaglia
  * @since 3.0.0
  */
-@Tag("Simple")
+@Tag("ExpirationPolicy")
 public class ThrottledUseAndTimeoutExpirationPolicyTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "throttleUseAndTimeoutExpirationPolicy.json");
@@ -36,7 +34,7 @@ public class ThrottledUseAndTimeoutExpirationPolicyTests {
 
     private ThrottledUseAndTimeoutExpirationPolicy expirationPolicy;
 
-    private TicketGrantingTicket ticket;
+    private TicketGrantingTicketImpl ticket;
 
     @BeforeEach
     public void initialize() {
@@ -71,8 +69,7 @@ public class ThrottledUseAndTimeoutExpirationPolicyTests {
     public void verifyThrottleNotTriggeredWithinOneSecond() {
         this.ticket.grantServiceTicket("test", RegisteredServiceTestUtils.getService(), this.expirationPolicy, false,
                 true);
-        val state = (TicketState) this.ticket;
-        val clock = Clock.fixed(state.getLastTimeUsed().toInstant().plusMillis(999), ZoneId.of("UTC"));
+        val clock = Clock.fixed(this.ticket.getLastTimeUsed().toInstant().plusMillis(999), ZoneOffset.UTC);
         expirationPolicy.setClock(clock);
         assertFalse(this.ticket.isExpired());
     }
@@ -81,8 +78,7 @@ public class ThrottledUseAndTimeoutExpirationPolicyTests {
     public void verifyNotWaitingEnoughTime() {
         this.ticket.grantServiceTicket("test", RegisteredServiceTestUtils.getService(), this.expirationPolicy, false,
             true);
-        val state = (TicketState) this.ticket;
-        val clock = Clock.fixed(state.getLastTimeUsed().toInstant().plusSeconds(1), ZoneId.of("UTC"));
+        val clock = Clock.fixed(this.ticket.getLastTimeUsed().toInstant().plusSeconds(1), ZoneOffset.UTC);
         expirationPolicy.setClock(clock);
         assertTrue(this.ticket.isExpired());
     }
