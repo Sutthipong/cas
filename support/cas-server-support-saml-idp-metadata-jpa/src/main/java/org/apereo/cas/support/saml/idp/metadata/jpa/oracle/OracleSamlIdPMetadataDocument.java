@@ -52,6 +52,8 @@ import javax.persistence.Table;
 @Entity(name = "SamlIdPMetadataDocument")
 @Table(name = "SamlIdPMetadataDocument")
 public class OracleSamlIdPMetadataDocument extends SamlIdPMetadataDocument {
+    private static final long serialVersionUID = 7087889980353544793L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
     @GenericGenerator(name = "native", strategy = "native")

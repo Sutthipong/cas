@@ -13,17 +13,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.Optional;
 
 /**
- * @author Misagh Moayyed
  * An implementation of {@link ApplicationContextAware} that statically
- * holds the application context
+ * holds the application context.
+ * @author Misagh Moayyed
  * @since 3.0.0.
  */
 public class ApplicationContextProvider implements ApplicationContextAware {
-    /**
-     * Bean name for script resource cache manager.
-     */
-    public static final String BEAN_NAME_SCRIPT_RESOURCE_CACHE_MANAGER = "scriptResourceCacheManager";
-
     private static ApplicationContext CONTEXT;
 
     public static ApplicationContext getApplicationContext() {
@@ -123,8 +118,8 @@ public class ApplicationContextProvider implements ApplicationContextAware {
      * @return the script resource cache manager
      */
     public static Optional<ScriptResourceCacheManager<String, ExecutableCompiledGroovyScript>> getScriptResourceCacheManager() {
-        if (CONTEXT != null && CONTEXT.containsBean(BEAN_NAME_SCRIPT_RESOURCE_CACHE_MANAGER)) {
-            return Optional.of(CONTEXT.getBean(BEAN_NAME_SCRIPT_RESOURCE_CACHE_MANAGER, ScriptResourceCacheManager.class));
+        if (CONTEXT != null && CONTEXT.containsBean(ScriptResourceCacheManager.BEAN_NAME)) {
+            return Optional.of(CONTEXT.getBean(ScriptResourceCacheManager.BEAN_NAME, ScriptResourceCacheManager.class));
         }
         return Optional.empty();
     }

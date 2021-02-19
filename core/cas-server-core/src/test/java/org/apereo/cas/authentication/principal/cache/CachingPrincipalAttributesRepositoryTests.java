@@ -1,6 +1,7 @@
 package org.apereo.cas.authentication.principal.cache;
 
 import org.apereo.cas.util.CollectionUtils;
+import org.apereo.cas.util.serialization.JacksonObjectMapperFactory;
 import org.apereo.cas.util.spring.ApplicationContextProvider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CachingPrincipalAttributesRepositoryTests extends AbstractCachingPrincipalAttributesRepositoryTests {
 
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "cachingPrincipalAttributesRepository.json");
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper MAPPER = JacksonObjectMapperFactory.builder()
+        .defaultTypingEnabled(true).build().toObjectMapper();
 
     @Autowired
     private ConfigurableApplicationContext applicationContext;
@@ -71,7 +73,7 @@ public class CachingPrincipalAttributesRepositoryTests extends AbstractCachingPr
     @Lazy(false)
     public static class CachingPrincipalAttributeRepositoryTestConfiguration {
         @Bean
-        @ConditionalOnMissingBean(name = "principalAttributesRepositoryCache")
+        @ConditionalOnMissingBean(name = PrincipalAttributesRepositoryCache.DEFAULT_BEAN_NAME)
         public PrincipalAttributesRepositoryCache principalAttributesRepositoryCache() {
             return new PrincipalAttributesRepositoryCache();
         }

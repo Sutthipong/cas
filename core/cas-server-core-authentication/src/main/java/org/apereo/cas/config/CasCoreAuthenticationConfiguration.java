@@ -6,8 +6,8 @@ import org.apereo.cas.authentication.AuthenticationManager;
 import org.apereo.cas.authentication.AuthenticationTransactionManager;
 import org.apereo.cas.authentication.DefaultAuthenticationAttributeReleasePolicy;
 import org.apereo.cas.authentication.DefaultAuthenticationEventExecutionPlan;
+import org.apereo.cas.authentication.DefaultAuthenticationManager;
 import org.apereo.cas.authentication.DefaultAuthenticationTransactionManager;
-import org.apereo.cas.authentication.PolicyBasedAuthenticationManager;
 import org.apereo.cas.configuration.CasConfigurationProperties;
 import org.apereo.cas.validation.AuthenticationAttributeReleasePolicy;
 
@@ -61,7 +61,7 @@ public class CasCoreAuthenticationConfiguration {
     @Bean
     @RefreshScope
     public AuthenticationManager casAuthenticationManager() {
-        return new PolicyBasedAuthenticationManager(
+        return new DefaultAuthenticationManager(
             authenticationEventExecutionPlan.getObject(),
             casProperties.getPersonDirectory().isPrincipalResolutionFailureFatal(),
             applicationContext
@@ -74,7 +74,7 @@ public class CasCoreAuthenticationConfiguration {
     @RefreshScope
     public AuthenticationEventExecutionPlan authenticationEventExecutionPlan(final List<AuthenticationEventExecutionPlanConfigurer> configurers) {
         val plan = new DefaultAuthenticationEventExecutionPlan();
-        val sortedConfigurers = new ArrayList<AuthenticationEventExecutionPlanConfigurer>(configurers);
+        val sortedConfigurers = new ArrayList<>(configurers);
         AnnotationAwareOrderComparator.sortIfNecessary(sortedConfigurers);
 
         sortedConfigurers.forEach(c -> {
@@ -95,6 +95,6 @@ public class CasCoreAuthenticationConfiguration {
         }
         return new DefaultAuthenticationAttributeReleasePolicy(release.getOnlyRelease(),
             release.getNeverRelease(),
-            casProperties.getAuthn().getMfa().getAuthenticationContextAttribute());
+            casProperties.getAuthn().getMfa().getCore().getAuthenticationContextAttribute());
     }
 }

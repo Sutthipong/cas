@@ -20,8 +20,11 @@ import org.apereo.cas.util.crypto.CipherExecutor;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apereo.inspektr.audit.spi.AuditResourceResolver;
 import org.apereo.inspektr.audit.spi.support.BooleanAuditActionResolver;
+import org.apereo.inspektr.audit.spi.support.DefaultAuditActionResolver;
 import org.apereo.inspektr.audit.spi.support.FirstParameterAuditResourceResolver;
+import org.apereo.inspektr.audit.spi.support.SpringWebflowActionExecutionAuditablePrincipalResolver;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +49,10 @@ public class PasswordManagementConfiguration implements InitializingBean {
     private CasConfigurationProperties casProperties;
 
     @Autowired
+    @Qualifier("returnValueResourceResolver")
+    private ObjectProvider<AuditResourceResolver> returnValueResourceResolver;
+
+    @Autowired
     @Qualifier("communicationsManager")
     private ObjectProvider<CommunicationsManager> communicationsManager;
 
@@ -55,7 +62,7 @@ public class PasswordManagementConfiguration implements InitializingBean {
     public CipherExecutor passwordManagementCipherExecutor() {
         val pm = casProperties.getAuthn().getPm();
         val crypto = pm.getReset().getCrypto();
-        if (pm.isEnabled() && crypto.isEnabled()) {
+        if (pm.getCore().isEnabled() && crypto.isEnabled()) {
             return CipherExecutorUtils.newStringCipherExecutor(crypto, PasswordResetTokenCipherExecutor.class);
         }
         return CipherExecutor.noOp();
@@ -65,7 +72,7 @@ public class PasswordManagementConfiguration implements InitializingBean {
     @RefreshScope
     @Bean
     public PasswordValidationService passwordValidationService() {
-        val policyPattern = casProperties.getAuthn().getPm().getPolicyPattern();
+        val policyPattern = casProperties.getAuthn().getPm().getCore().getPolicyPattern();
         return new DefaultPasswordValidationService(policyPattern, passwordHistoryService());
     }
 
@@ -75,7 +82,7 @@ public class PasswordManagementConfiguration implements InitializingBean {
     public PasswordHistoryService passwordHistoryService() {
         val pm = casProperties.getAuthn().getPm();
         val history = pm.getHistory();
-        if (pm.isEnabled() && history.isEnabled()) {
+        if (pm.getCore().isEnabled() && history.getCore().isEnabled()) {
             if (history.getGroovy().getLocation() != null) {
                 return new GroovyPasswordHistoryService(history.getGroovy().getLocation());
             }
@@ -89,7 +96,7 @@ public class PasswordManagementConfiguration implements InitializingBean {
     @Bean
     public PasswordManagementService passwordChangeService() {
         val pm = casProperties.getAuthn().getPm();
-        if (pm.isEnabled()) {
+        if (pm.getCore().isEnabled()) {
             val location = pm.getJson().getLocation();
             if (location != null) {
                 LOGGER.debug("Configuring password management based on JSON resource [{}]", location);
@@ -112,32 +119,37 @@ public class PasswordManagementConfiguration implements InitializingBean {
 
             LOGGER.warn("No storage service (LDAP, Database, etc) is configured to handle the account update and password service operations. "
                 + "Password management functionality will have no effect and will be disabled until a storage service is configured. "
-                + "To explicitly disable the password management functionality, add 'cas.authn.pm.enabled=false' to the CAS configuration");
+                + "To explicitly disable the password management functionality, add 'cas.authn.pm.core.enabled=false' to the CAS configuration");
         } else {
             LOGGER.debug("Password management is disabled. To enable the password management functionality, "
-                + "add 'cas.authn.pm.enabled=true' to the CAS configuration and then configure storage options for account updates");
+                + "add 'cas.authn.pm.core.enabled=true' to the CAS configuration and then configure storage options for account updates");
         }
-        return new NoOpPasswordManagementService(passwordManagementCipherExecutor(),
+        return new NoOpPasswordManagementService(
+            passwordManagementCipherExecutor(),
             casProperties.getServer().getPrefix(),
             casProperties.getAuthn().getPm());
-    }
-
-    @Override
-    public void afterPropertiesSet() {
-        val pm = casProperties.getAuthn().getPm();
-        if (pm.isEnabled()) {
-            communicationsManager.getObject().validate();
-        }
     }
 
     @Bean
     public AuditTrailRecordResolutionPlanConfigurer passwordManagementAuditTrailRecordResolutionPlanConfigurer() {
         return plan -> {
             plan.registerAuditActionResolver("CHANGE_PASSWORD_ACTION_RESOLVER",
-                new BooleanAuditActionResolver(AuditTrailConstants.AUDIT_ACTION_POSTFIX_SUCCESS, AuditTrailConstants.AUDIT_ACTION_POSTFIX_FAILED));
-            plan.registerAuditResourceResolver("CHANGE_PASSWORD_RESOURCE_RESOLVER",
-                new FirstParameterAuditResourceResolver());
+                new BooleanAuditActionResolver(AuditTrailConstants.AUDIT_ACTION_POSTFIX_SUCCESS,
+                    AuditTrailConstants.AUDIT_ACTION_POSTFIX_FAILED));
+            plan.registerAuditResourceResolver("CHANGE_PASSWORD_RESOURCE_RESOLVER", new FirstParameterAuditResourceResolver());
+            plan.registerAuditActionResolver("REQUEST_CHANGE_PASSWORD_ACTION_RESOLVER", new DefaultAuditActionResolver());
+            plan.registerAuditResourceResolver("REQUEST_CHANGE_PASSWORD_RESOURCE_RESOLVER", returnValueResourceResolver.getObject());
+            plan.registerAuditPrincipalResolver("REQUEST_CHANGE_PASSWORD_PRINCIPAL_RESOLVER",
+                new SpringWebflowActionExecutionAuditablePrincipalResolver("username"));
         };
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        val pm = casProperties.getAuthn().getPm();
+        if (pm.getCore().isEnabled()) {
+            communicationsManager.getObject().validate();
+        }
     }
 }
 

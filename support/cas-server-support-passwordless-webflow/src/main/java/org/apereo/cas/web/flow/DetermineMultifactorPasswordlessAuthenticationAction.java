@@ -99,6 +99,14 @@ public class DetermineMultifactorPasswordlessAuthenticationAction extends Abstra
         WebUtils.putAuthentication(auth, requestContext);
     }
 
+    /**
+     * Resolve multifactor authentication provider.
+     *
+     * @param requestContext the request context
+     * @param auth           the auth
+     * @param service        the service
+     * @return the optional
+     */
     protected Optional<String> resolveMultifactorAuthenticationProvider(final RequestContext requestContext, final Authentication auth,
                                                                         final WebApplicationService service) {
         try {
@@ -129,7 +137,7 @@ public class DetermineMultifactorPasswordlessAuthenticationAction extends Abstra
             LOGGER.trace("Passwordless account [{}] is not eligible for multifactor authentication", user);
             return false;
         }
-        return casProperties.getAuthn().getPasswordless().isMultifactorAuthenticationActivated();
+        return casProperties.getAuthn().getPasswordless().getCore().isMultifactorAuthenticationActivated();
 
     }
 }

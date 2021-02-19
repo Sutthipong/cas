@@ -66,6 +66,7 @@ public class DetermineDelegatedAuthenticationAction extends AbstractAction imple
             return new EventFactorySupport().event(this,
                 CasWebflowConstants.TRANSITION_ID_REDIRECT, "delegatedClientIdentityProvider", resolvedId);
         }
+        LOGGER.trace("Delegated identity provider could not be determined for [{}] based on [{}]", user, clients);
         return success();
     }
 
@@ -103,6 +104,6 @@ public class DetermineDelegatedAuthenticationAction extends AbstractAction imple
             LOGGER.trace("Passwordless account [{}] is not eligible for delegated authentication", user);
             return false;
         }
-        return casProperties.getAuthn().getPasswordless().isDelegatedAuthenticationActivated();
+        return casProperties.getAuthn().getPasswordless().getCore().isDelegatedAuthenticationActivated();
     }
 }

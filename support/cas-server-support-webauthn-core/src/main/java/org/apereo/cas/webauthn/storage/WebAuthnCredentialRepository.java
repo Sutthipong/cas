@@ -1,8 +1,8 @@
 package org.apereo.cas.webauthn.storage;
 
+import com.yubico.core.InMemoryRegistrationStorage;
+import com.yubico.core.RegistrationStorage;
 import com.yubico.webauthn.CredentialRepository;
-import com.yubico.webauthn.core.InMemoryRegistrationStorage;
-import com.yubico.webauthn.core.RegistrationStorage;
 
 /**
  * This is {@link WebAuthnCredentialRepository}.
@@ -12,6 +12,11 @@ import com.yubico.webauthn.core.RegistrationStorage;
  */
 public interface WebAuthnCredentialRepository extends RegistrationStorage, CredentialRepository, WebAuthnRegistrationStorageCleaner {
 
+    /**
+     * In memory web authn credential repository.
+     *
+     * @return the web authn credential repository
+     */
     static WebAuthnCredentialRepository inMemory() {
         return new InMemoryWebAuthn();
     }

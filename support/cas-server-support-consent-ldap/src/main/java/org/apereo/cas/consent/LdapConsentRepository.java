@@ -2,22 +2,22 @@ package org.apereo.cas.consent;
 
 import org.apereo.cas.authentication.Authentication;
 import org.apereo.cas.authentication.principal.Service;
-import org.apereo.cas.configuration.model.support.consent.ConsentProperties.Ldap;
+import org.apereo.cas.configuration.model.support.consent.LdapConsentProperties;
 import org.apereo.cas.services.RegisteredService;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.LdapUtils;
 import org.apereo.cas.util.LoggingUtils;
+import org.apereo.cas.util.serialization.JacksonObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.apache.commons.lang3.StringUtils;
 import org.hjson.JsonValue;
 import org.ldaptive.ConnectionFactory;
 import org.ldaptive.LdapAttribute;
 import org.ldaptive.LdapEntry;
-import org.ldaptive.LdapException;
 import org.springframework.beans.factory.DisposableBean;
 
 import java.util.Collection;
@@ -38,11 +38,12 @@ import java.util.stream.Collectors;
 public class LdapConsentRepository implements ConsentRepository, DisposableBean {
     private static final long serialVersionUID = 8561763114482490L;
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper MAPPER = JacksonObjectMapperFactory.builder()
+        .defaultTypingEnabled(false).build().toObjectMapper();
 
     private final ConnectionFactory connectionFactory;
 
-    private final Ldap ldapProperties;
+    private final LdapConsentProperties ldapProperties;
 
     @Override
     public ConsentDecision findConsentDecision(final Service service,
@@ -51,7 +52,7 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
         val principal = authentication.getPrincipal().getId();
         val entry = readConsentEntry(principal);
         if (entry != null) {
-            val consentDecisions = entry.getAttribute(this.ldapProperties.getConsentAttributeName());
+            val consentDecisions = entry.getAttribute(ldapProperties.getConsentAttributeName());
             if (consentDecisions != null) {
                 val values = consentDecisions.getStringValues();
                 LOGGER.debug("Locating consent decision(s) for [{}] and service [{}]", principal, service.getId());
@@ -71,9 +72,9 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
     public Collection<? extends ConsentDecision> findConsentDecisions(final String principal) {
         val entry = readConsentEntry(principal);
         if (entry != null) {
-            val consentDecisions = entry.getAttribute(this.ldapProperties.getConsentAttributeName());
+            val consentDecisions = entry.getAttribute(ldapProperties.getConsentAttributeName());
             if (consentDecisions != null) {
-                LOGGER.debug("Located consent decision for [{}] at attribute [{}]", principal, this.ldapProperties.getConsentAttributeName());
+                LOGGER.debug("Located consent decision for [{}] at attribute [{}]", principal, ldapProperties.getConsentAttributeName());
                 return consentDecisions.getStringValues()
                     .stream()
                     .map(LdapConsentRepository::mapFromJson)
@@ -144,15 +145,11 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
         return null;
     }
 
+    @SneakyThrows
     private static String mapToJson(final ConsentDecision consent) {
-        try {
-            val json = MAPPER.writeValueAsString(consent);
-            LOGGER.trace("Transformed consent object [{}] as JSON value [{}]", consent, json);
-            return json;
-        } catch (final Exception e) {
-            LoggingUtils.error(LOGGER, e);
-        }
-        return null;
+        val json = MAPPER.writeValueAsString(consent);
+        LOGGER.trace("Transformed consent object [{}] as JSON value [{}]", consent, json);
+        return json;
     }
 
     /**
@@ -171,17 +168,11 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
         if (ldapConsent != null) {
             val result = removeDecision(ldapConsent, decision.getId());
             val json = mapToJson(decision);
-            if (StringUtils.isBlank(json)) {
-                throw new IllegalArgumentException("Could not map consent decision to JSON");
-            }
             result.add(json);
             LOGGER.debug("Merged consent decision [{}] with LDAP attribute [{}]", decision, ldapConsent.getName());
             return CollectionUtils.wrap(result);
         }
         val json = mapToJson(decision);
-        if (StringUtils.isBlank(json)) {
-            throw new IllegalArgumentException("Could not map consent decision to JSON");
-        }
         val result = new HashSet<String>(1);
         result.add(json);
         return result;
@@ -241,7 +232,7 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
                 LOGGER.debug("Locating consent LDAP entry [{}]", entry);
                 return entry;
             }
-        } catch (final LdapException e) {
+        } catch (final Exception e) {
             LoggingUtils.error(LOGGER, e);
         }
         return null;
@@ -264,7 +255,7 @@ public class LdapConsentRepository implements ConsentRepository, DisposableBean 
                 LOGGER.debug("Locating [{}] consent LDAP entries based on response [{}]", results.size(), response);
                 return results;
             }
-        } catch (final LdapException e) {
+        } catch (final Exception e) {
             LoggingUtils.error(LOGGER, e);
         }
         LOGGER.debug("Unable to read consent entries from LDAP for attribute [{}]", att);

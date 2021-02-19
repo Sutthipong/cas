@@ -56,6 +56,7 @@ import org.apereo.cas.support.oauth.services.OAuthRegisteredService;
 import org.apereo.cas.support.oauth.web.CasOAuth20TestAuthenticationEventExecutionPlanConfiguration;
 import org.apereo.cas.support.oauth.web.endpoints.OAuth20AccessTokenEndpointController;
 import org.apereo.cas.support.oauth.web.endpoints.OAuth20DeviceUserCodeApprovalEndpointController;
+import org.apereo.cas.support.oauth.web.response.OAuth20CasClientRedirectActionBuilder;
 import org.apereo.cas.support.oauth.web.response.accesstoken.OAuth20TokenGenerator;
 import org.apereo.cas.support.oauth.web.response.accesstoken.ext.AccessTokenRequestDataHolder;
 import org.apereo.cas.support.oauth.web.response.accesstoken.response.OAuth20AccessTokenResponseGenerator;
@@ -94,7 +95,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.pac4j.core.context.HttpConstants;
-import org.pac4j.springframework.web.SecurityInterceptor;
+import org.pac4j.core.context.session.SessionStore;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -108,6 +109,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.autoconfigure.RefreshAutoConfiguration;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
@@ -141,7 +143,8 @@ import static org.mockito.Mockito.*;
  * @author Misagh Moayyed
  * @since 5.0.0
  */
-@SpringBootTest(classes = AbstractOAuth20Tests.SharedTestConfiguration.class)
+@SpringBootTest(classes = AbstractOAuth20Tests.SharedTestConfiguration.class,
+    properties = "spring.main.allow-bean-definition-overriding=true")
 @DirtiesContext
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @EnableTransactionManagement(proxyTargetClass = true)
@@ -164,6 +167,8 @@ public abstract class AbstractOAuth20Tests {
     public static final String REDIRECT_URI = "http://someurl";
 
     public static final String OTHER_REDIRECT_URI = "http://someotherurl";
+
+    public static final String SERVICE_URL = "http://serviceurl";
 
     public static final String ID = "casuser";
 
@@ -206,6 +211,10 @@ public abstract class AbstractOAuth20Tests {
     public static final int TIMEOUT = 7200;
 
     @Autowired
+    @Qualifier("oauthCasClientRedirectActionBuilder")
+    protected OAuth20CasClientRedirectActionBuilder oauthCasClientRedirectActionBuilder;
+
+    @Autowired
     @Qualifier("webApplicationServiceFactory")
     protected ServiceFactory<WebApplicationService> serviceFactory;
 
@@ -216,6 +225,10 @@ public abstract class AbstractOAuth20Tests {
     @Autowired
     @Qualifier("accessTokenController")
     protected OAuth20AccessTokenEndpointController accessTokenController;
+
+    @Autowired
+    @Qualifier("oauthDistributedSessionStore")
+    protected SessionStore oauthDistributedSessionStore;
 
     @Autowired
     @Qualifier("oauthAuthorizationCodeResponseBuilder")
@@ -247,10 +260,10 @@ public abstract class AbstractOAuth20Tests {
 
     @Autowired
     @Qualifier("requiresAuthenticationAccessTokenInterceptor")
-    protected SecurityInterceptor requiresAuthenticationInterceptor;
+    protected HandlerInterceptor requiresAuthenticationInterceptor;
 
     @Autowired
-    protected ApplicationContext applicationContext;
+    protected ConfigurableApplicationContext applicationContext;
 
     @Autowired
     @Qualifier("defaultOAuthCodeFactory")
@@ -682,7 +695,7 @@ public abstract class AbstractOAuth20Tests {
         val mockRequest = new MockHttpServletRequest(HttpMethod.GET.name(), CONTEXT + OAuth20Constants.ACCESS_TOKEN_URL);
         val mockResponse = new MockHttpServletResponse();
 
-        val service = RegisteredServiceTestUtils.getService("example");
+        val service = RegisteredServiceTestUtils.getService(SERVICE_URL);
         val holder = AccessTokenRequestDataHolder.builder()
             .clientId(registeredService.getClientId())
             .service(service)

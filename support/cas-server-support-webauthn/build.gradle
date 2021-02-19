@@ -5,10 +5,11 @@ dependencies {
 
     implementation libraries.webauthn
 
-    compileOnly project(":support:cas-server-support-trusted-mfa")
+    compileOnlyApi  project(":support:cas-server-support-trusted-mfa")
     
     implementation project(":support:cas-server-support-trusted-mfa-core")
     implementation project(":support:cas-server-support-webauthn-core")
+    implementation project(":support:cas-server-support-webauthn-core-webflow")
 
     implementation project(":core:cas-server-core-authentication-mfa-api")
     implementation project(":core:cas-server-core-authentication-mfa")

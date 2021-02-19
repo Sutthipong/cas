@@ -17,8 +17,8 @@ dependencies {
     implementation project(":support:cas-server-support-u2f-core")
     implementation project(":support:cas-server-support-trusted-mfa-core")
 
-    compileOnly project(":core:cas-server-core-rest")
-    compileOnly project(":support:cas-server-support-trusted-mfa")
+    compileOnlyApi  project(":core:cas-server-core-rest")
+    compileOnlyApi  project(":support:cas-server-support-trusted-mfa")
 
     implementation libraries.yubicoapi
     implementation libraries.u2flibserver
@@ -48,4 +48,6 @@ dependencies {
     testImplementation project(path: ":core:cas-server-core-webflow-mfa", configuration: "tests")
     testImplementation project(path: ":core:cas-server-core-webflow", configuration: "tests")
     testImplementation project(path: ":support:cas-server-support-reports", configuration: "tests")
+
+    testImplementation libraries.springboottomcat
 }

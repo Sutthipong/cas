@@ -4,6 +4,8 @@ title: CAS - Release Process
 category: Developer
 ---
 
+{% include variables.html %}
+
 # CAS Release Process
 
 This page documents the steps that a release engineer should take for cutting a CAS server release. 
@@ -35,7 +37,8 @@ signing.password=P@$$w0rd
 signing.secretKeyRingFile=/Users/example/.gnupg/secring.gpg
 ```
 
-Additional notes on how artifacts are signed using the Gradle signing plugin are [available here](https://docs.gradle.org/current/userguide/signing_plugin.html)
+Additional notes on how artifacts are signed using the Gradle 
+signing plugin are [available here](https://docs.gradle.org/current/userguide/signing_plugin.html)
 
 ## Environment Setup
 
@@ -49,7 +52,7 @@ org.gradle.parallel=false
 ```
 
 - Checkout the CAS project: `git clone git@github.com:apereo/cas.git cas-server`
-- Make sure you have the [latest version of JDK 11](https://www.oracle.com/technetwork/java/javase/downloads) installed via `java -version`. 
+- Make sure you have the [latest version of JDK 11](https://openjdk.java.net/projects/jdk/11/) installed via `java -version`. 
 
 ## Preparing the Release
 
@@ -63,35 +66,30 @@ a new release branch should be created.
 git checkout -b $BRANCH
 ```
 
-<div class="alert alert-warning"><strong>Remember</strong><p>You should do this only for major or minor releases (i.e. <code>4.2.x</code>, <code>5.0.x</code>).
+<div class="alert alert-warning"><strong>Remember</strong><p>You should do this only for major or minor 
+releases (i.e. <code>4.2.x</code>, <code>5.0.x</code>).
 If there already exists a remote tracking branch for the version you are about to release, you should <code>git checkout</code> that branch, 
 skip this step and move on to next section to build and release.</p></div>
 
 ### GitHub Actions
 
-<div class="alert alert-warning"><strong>Remember</strong><p>You should do this only for major or minor releases, when new branches are created.</p></div>
+<div class="alert alert-warning"><strong>Remember</strong><p>You should do this only for major or minor 
+releases, when new branches are created.</p></div>
  
-- Change `.github/workflows/cas-build.yml` to trigger and *only* build the newly-created release branch.
+- Change `.github/workflows/cas-build.yml` to trigger and *only* build the newly-created release branch. Scan the file to make sure all references point to the newly-created release branch.
 - Examine all CI shell scripts under the `ci` folder to make sure nothing points to `development` or `master`. This is particularly applicable to how CAS documentation is published to the `gh-pages` branch.
-- Disable jobs in CI that report new dependency versions or update dependencies using Renovate, etc.
+- Disable jobs in CI that report new dependency versions, update dependencies using Renovate, publish Docker images, etc.
  
 Do not forget to commit all changes and push changes upstream, creating a new remote branch to track the release.
 
 ## Performing the Release 
 
 - In the project's `gradle.properties`, change the project version to the release version and remove the `-SNAPSHOT`. (i.e. `6.0.0-RC1`). 
-- Then build and release the project using the following command:
+- Build and release the project using the following command:
 
 ```bash
 ./release.sh
 ```
-
-Next:  
-
-- Log into [https://oss.sonatype.org](https://oss.sonatype.org).
-- Click on "Staged Repositories" on the left and find the CAS release artifacts at the bottom of the list.
-- "Close" the repository via the toolbar button and provide a description. This step may take a few minutes. Follow the activity and make sure all goes well.
-- "Release" the repository via the toolbar button and provide a description. The step is only enabled if the repository is successfully closed.
 
 ## Finalizing the Release
 
@@ -104,22 +102,15 @@ You should also switch back to the main development branch (i.e. `master`) and f
 
 ## Housekeeping
 
-- Close [the milestone](https://github.com/apereo/cas/milestones) for this release.
-- Find [the release](https://github.com/apereo/cas/releases) that is mapped to the released tag and update the description.
-
 <div class="alert alert-info"><strong>Remember</strong><p>When updating the release description, try to be keep 
 consistent and follow the same layout as previous releases.</p></div>
 
-- Mark the release as pre-release, when releasing RC versions of the project. 
-- Send an announcement message to [@cas-announce, @cas-user and @cas-dev](/cas/Mailing-Lists.html) mailing lists, linking to the new release page.
+- Mark the release tag as pre-release, when releasing RC versions of the project on GitHub. 
 
-## Update Overlays
+## Update CAS Initializr
 
-Update the following overlay projects to point to the newly released CAS version. You may need to move the current `master` branch
-over to a maintenance branch for each of the below overlay projects, specially if/when dealing with major/minor releases
-and if the release process here had you create a new branch. 
-
-- [CAS WAR Overlay](https://github.com/apereo/cas-overlay-template)
+Make sure to update the [CAS Initializr](../installation/WAR-Overlay-Initializr.html) to allow for generation of projects
+based on the newly-released version.
 
 ## Update Documentation
 
@@ -134,7 +125,7 @@ and if the release process here had you create a new branch.
 
 ## Update Maintenance Policy
 
-Update the [Maintenance Policy](https://github.com/apereo/cas/edit/gh-pages/Maintenance-Policy.md/) to note the release schedule and EOL timeline. 
+Update the [Maintenance Policy](https://github.com/apereo/cas/edit/gh-pages/developer/Maintenance-Policy.md/) to note the release schedule and EOL timeline. 
 This task is only relevant when dealing with major or minor releases.
 
 ## Update Demos

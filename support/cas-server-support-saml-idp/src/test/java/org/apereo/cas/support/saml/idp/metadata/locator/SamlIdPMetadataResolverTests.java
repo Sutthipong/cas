@@ -5,7 +5,6 @@ import org.apereo.cas.support.saml.BaseSamlIdPConfigurationTests;
 import com.google.common.collect.Iterables;
 import lombok.val;
 import net.shibboleth.utilities.java.support.resolver.CriteriaSet;
-import net.shibboleth.utilities.java.support.resolver.ResolverException;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.opensaml.core.criterion.EntityIdCriterion;
@@ -23,15 +22,15 @@ import static org.mockito.Mockito.*;
  */
 @Tag("SAML")
 @TestPropertySource(properties = {
-    "cas.authn.saml-idp.entity-id=https://cas.example.org/idp",
-    "cas.authn.saml-idp.metadata.location=${#systemProperties['java.io.tmpdir']}/idp-metadata"
+    "cas.authn.saml-idp.core.entity-id=https://cas.example.org/idp",
+    "cas.authn.saml-idp.metadata.file-system.location=${#systemProperties['java.io.tmpdir']}/idp-metadata"
 })
 @EnableRetry
 public class SamlIdPMetadataResolverTests extends BaseSamlIdPConfigurationTests {
 
     @Test
     public void verifyOperation() throws Exception {
-        val criteria = new CriteriaSet(new EntityIdCriterion(casProperties.getAuthn().getSamlIdp().getEntityId()));
+        val criteria = new CriteriaSet(new EntityIdCriterion(casProperties.getAuthn().getSamlIdp().getCore().getEntityId()));
 
         val result1 = casSamlIdPMetadataResolver.resolve(criteria);
         assertFalse(Iterables.isEmpty(result1));
@@ -53,6 +52,6 @@ public class SamlIdPMetadataResolverTests extends BaseSamlIdPConfigurationTests 
     public void verifyOperationFail() {
         val criteria = mock(CriteriaSet.class);
         when(criteria.get(any())).thenThrow(IllegalArgumentException.class);
-        assertThrows(ResolverException.class, () -> casSamlIdPMetadataResolver.resolve(criteria));
+        assertThrows(IllegalArgumentException.class, () -> casSamlIdPMetadataResolver.resolve(criteria));
     }
 }

@@ -214,13 +214,20 @@ public abstract class AbstractRegisteredService implements RegisteredService {
         return getAuthenticationPolicy().getRequiredAuthenticationHandlers();
     }
 
+    /**
+     * Sets required handlers.
+     * @deprecated Since 6.2
+     * @param requiredHandlers the required handlers
+     */
     @Deprecated(since = "6.2.0")
     public void setRequiredHandlers(final Set<String> requiredHandlers) {
-        LOGGER.debug("Assigning a collection of required authentication handlers to a registered service is deprecated. "
-            + "This field is scheduled to be removed in the future. If you need to, consider defining an authentication policy "
-            + "for the registered service instead to specify required authentication handlers [{}]", requiredHandlers);
-        initialize();
-        getAuthenticationPolicy().getRequiredAuthenticationHandlers().addAll(requiredHandlers);
+        if (requiredHandlers != null) {
+            LOGGER.debug("Assigning a collection of required authentication handlers to a registered service is deprecated. "
+                    + "This field is scheduled to be removed in the future. If you need to, consider defining an authentication policy "
+                    + "for the registered service instead to specify required authentication handlers [{}]", requiredHandlers);
+            initialize();
+            getAuthenticationPolicy().getRequiredAuthenticationHandlers().addAll(requiredHandlers);
+        }
     }
     
     @Override

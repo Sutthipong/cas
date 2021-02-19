@@ -13,7 +13,8 @@ import org.springframework.core.Ordered;
 public class WsFederationServicesManagerRegisteredServiceLocator extends DefaultServicesManagerRegisteredServiceLocator {
     public WsFederationServicesManagerRegisteredServiceLocator() {
         setOrder(Ordered.HIGHEST_PRECEDENCE);
-        setRegisteredServiceFilter((registeredService, serviceId) -> registeredService.getClass().equals(WSFederationRegisteredService.class));
+        setRegisteredServiceFilter((registeredService, service) ->
+            registeredService instanceof WSFederationRegisteredService);
     }
 }
 

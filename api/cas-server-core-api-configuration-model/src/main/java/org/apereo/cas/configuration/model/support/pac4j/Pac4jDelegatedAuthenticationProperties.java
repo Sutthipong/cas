@@ -34,33 +34,10 @@ public class Pac4jDelegatedAuthenticationProperties implements Serializable {
     private static final long serialVersionUID = 4388567744591488495L;
 
     /**
-     * When constructing the final user profile from
-     * the delegated provider, determines if the provider id
-     * should be combined with the principal id.
+     * Pac4j core authentication engine settings.
      */
-    private boolean typedIdUsed;
-
-    /**
-     * The attribute to use as the principal identifier built during and upon a successful authentication attempt.
-     */
-    private String principalAttributeId;
-
-    /**
-     * Whether initialization of delegated identity providers should be done
-     * eagerly typically during startup.
-     */
-    private boolean lazyInit = true;
-
-    /**
-     * Indicates whether profiles and other session data,
-     * collected as part of pac4j flows and requests
-     * that are kept by the container session, should be replicated
-     * across the cluster using CAS and its own ticket registry.
-     * Without this option, profile data and other related
-     * pieces of information should be manually replicated
-     * via means and libraries outside of CAS.
-     */
-    private boolean replicateSessions = true;
+    @NestedConfigurationProperty
+    private Pac4jDelegatedAuthenticationCoreProperties core = new Pac4jDelegatedAuthenticationCoreProperties();
 
     /**
      * Handle provisioning ops when establishing profiles
@@ -159,16 +136,6 @@ public class Pac4jDelegatedAuthenticationProperties implements Serializable {
      * authentication provider.
      */
     private HiOrgServer hiOrgServer = new HiOrgServer();
-
-    /**
-     * The name of the authentication handler in CAS used for delegation.
-     */
-    private String name;
-
-    /**
-     * Order of the authentication handler in the chain.
-     */
-    private Integer order;
 
     /**
      * Settings related to handling saml2 discovery of IdPs.
@@ -291,13 +258,14 @@ public class Pac4jDelegatedAuthenticationProperties implements Serializable {
 
         /**
          * The requested scope from the provider.
+         *  The default scope is {@code user}, i.e. {@code read/write} access to the GitHub user account.
+         *  For a full list of possible scopes, <a href="https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/">see this</a>).
          */
         private String scope;
 
         public Github() {
             setClientName("Github");
         }
-
     }
 
     @RequiresModule(name = "cas-server-support-pac4j-webflow")
@@ -400,7 +368,7 @@ public class Pac4jDelegatedAuthenticationProperties implements Serializable {
         }
     }
 
-    @RequiresModule(name = "cas-server-support-pac4j-webflow", automated = true)
+    @RequiresModule(name = "cas-server-support-pac4j-webflow")
     @Getter
     @Setter
     @Accessors(chain = true)

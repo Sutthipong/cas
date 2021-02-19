@@ -6,6 +6,7 @@ import org.apereo.cas.support.saml.services.idp.metadata.SamlIdPMetadataDocument
 import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.crypto.CipherExecutor;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.IOUtils;
@@ -30,8 +31,9 @@ public class AmazonS3SamlIdPMetadataLocator extends AbstractSamlIdPMetadataLocat
     private final String bucketName;
 
     public AmazonS3SamlIdPMetadataLocator(final CipherExecutor<String, String> metadataCipherExecutor,
+                                          final Cache<String, SamlIdPMetadataDocument> metadataCache,
                                           final String bucketName, final S3Client s3Client) {
-        super(metadataCipherExecutor);
+        super(metadataCipherExecutor, metadataCache);
         this.bucketName = bucketName;
         this.s3Client = s3Client;
     }
@@ -43,8 +45,8 @@ public class AmazonS3SamlIdPMetadataLocator extends AbstractSamlIdPMetadataLocat
         try {
             val bucketToUse = AmazonS3SamlIdPMetadataUtils.determineBucketNameFor(registeredService, this.bucketName, s3Client);
             LOGGER.debug("Locating S3 object(s) from bucket [{}]...", bucketToUse);
-            if (!s3Client.listBuckets(ListBucketsRequest.builder().build())
-                .buckets().stream().anyMatch(b -> b.name().equalsIgnoreCase(bucketToUse))) {
+            if (s3Client.listBuckets(ListBucketsRequest.builder().build())
+                .buckets().stream().noneMatch(b -> b.name().equalsIgnoreCase(bucketToUse))) {
                 LOGGER.debug("S3 bucket [{}] does not exist", bucketToUse);
                 return metadataDocument;
             }

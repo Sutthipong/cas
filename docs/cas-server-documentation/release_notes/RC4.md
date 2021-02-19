@@ -4,7 +4,7 @@ title: CAS - Release Notes
 category: Planning
 ---
 
-# RC3 Release Notes
+# RC4 Release Notes
 
 We strongly recommend that you take advantage of the release candidates as they come out. Waiting for a `GA` release is only going to set 
 you up for unpleasant surprises. A `GA` is [a tag and nothing more](https://apereo.github.io/2017/03/08/the-myth-of-ga-rel/). Note that CAS 
@@ -37,7 +37,7 @@ and operates. If you consider your CAS deployment to be a critical part of the i
 In the `gradle.properties` of the [CAS WAR Overlay](../installation/WAR-Overlay-Installation.html), adjust the following setting:
 
 ```properties
-cas.version=6.3.0-RC4
+cas.version=6.4.0-RC4
 ```
 
 <div class="alert alert-info">
@@ -48,9 +48,9 @@ cas.version=6.3.0-RC4
 
 The following items are new improvements and enhancements presented in this release.
 
+
 ## Other Stuff
 
+ 
 ## Library Upgrades
-
-
 

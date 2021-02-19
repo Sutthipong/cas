@@ -106,8 +106,8 @@ public class InitialFlowSetupAction extends AbstractAction {
         if (service != null) {
             LOGGER.debug("Placing service in context scope: [{}]", service.getId());
             val selectedService = authenticationRequestServiceSelectionStrategies.resolveService(service);
-            val registeredService = this.servicesManager.findServiceBy(selectedService);
-            RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(registeredService);
+            val registeredService = servicesManager.findServiceBy(selectedService);
+            RegisteredServiceAccessStrategyUtils.ensureServiceAccessIsAllowed(service.getId(), registeredService);
             if (registeredService != null && registeredService.getAccessStrategy().isServiceAccessAllowed()) {
                 LOGGER.debug("Placing registered service [{}] with id [{}] in context scope",
                     registeredService.getServiceId(),
@@ -144,7 +144,7 @@ public class InitialFlowSetupAction extends AbstractAction {
         val request = WebUtils.getHttpServletRequestFromExternalWebflowContext(context);
         WebUtils.putWarningCookie(context, Boolean.valueOf(this.warnCookieGenerator.retrieveCookieValue(request)));
 
-        WebUtils.putGeoLocationTrackingIntoFlowScope(context, casProperties.getEvents().isTrackGeolocation());
+        WebUtils.putGeoLocationTrackingIntoFlowScope(context, casProperties.getEvents().getCore().isTrackGeolocation());
         WebUtils.putRememberMeAuthenticationEnabled(context, casProperties.getTicket().getTgt().getRememberMe().isEnabled());
 
         val staticAuthEnabled = (casProperties.getAuthn().getAccept().isEnabled()

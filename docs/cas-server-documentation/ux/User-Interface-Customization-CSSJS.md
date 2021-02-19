@@ -4,6 +4,8 @@ title: CSS & JavaScript - User Interface Customization - CAS
 category: User Interface
 ---
 
+{% include variables.html %}
+
 # CSS
 
 The default styles are all contained in one single file located in `src/main/resources/static/css/cas.css`. This location is set in `cas-theme-default.properties`. CAS by default uses [Material.io](https://material.io/) library and design specification as a base for its user experience.
@@ -17,7 +19,9 @@ cas.standard.js.file=/js/cas.js
 
 ## Responsive Design
 
-CSS media queries bring responsive design features to CAS which would allow the adopter to focus on one theme for all appropriate devices and platforms. These queries are defined in the same `cas.css` file. They follow the Twitter Bootstrap breakpoints and grid.
+CSS media queries bring responsive design features to CAS which would allow the adopter to focus 
+on one theme for all appropriate devices and platforms. These queries are defined in the 
+same `cas.css` file. They follow the Twitter Bootstrap breakpoints and grid.
 
 # Javascript
 

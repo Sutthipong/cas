@@ -1,5 +1,7 @@
 package org.apereo.cas.services;
 
+import org.apereo.cas.authentication.principal.WebApplicationServiceFactory;
+
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.val;
 import org.junit.jupiter.api.Tag;
@@ -33,7 +35,7 @@ public class ChainingServicesManagerTests extends AbstractServicesManagerTests<C
         assertNotNull(input.getName());
 
         assertNull(input.findServiceBy(0, RegexRegisteredService.class));
-        assertNull(input.findServiceBy("name", RegexRegisteredService.class));
+        assertNull(input.findServiceBy(new WebApplicationServiceFactory().createService("name"), RegexRegisteredService.class));
     }
 
     @Test
@@ -56,7 +58,7 @@ public class ChainingServicesManagerTests extends AbstractServicesManagerTests<C
         svc.setServiceId("https://www.example.com/two");
         assertNotNull(servicesManager.save(svc, false));
         val chain = DomainAwareServicesManager.class.cast(servicesManager);
-        assertTrue(chain.getDomains().count() == 0);
+        assertEquals(chain.getDomains().count(), 0);
         assertTrue(chain.getServicesForDomain("example.org").isEmpty());
     }
 

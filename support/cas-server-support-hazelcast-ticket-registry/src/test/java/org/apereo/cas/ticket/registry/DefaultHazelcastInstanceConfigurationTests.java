@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.*;
     CasCoreServicesConfiguration.class,
     CasCoreWebConfiguration.class,
     CasWebApplicationServiceFactoryConfiguration.class
-}, properties = "cas.ticket.registry.hazelcast.cluster.instance-name=samplelocalhostinstance")
+}, properties = "cas.ticket.registry.hazelcast.cluster.core.instance-name=samplelocalhostinstance")
 @Slf4j
 @Tag("Hazelcast")
 @DirtiesContext
@@ -89,6 +89,7 @@ public class DefaultHazelcastInstanceConfigurationTests {
         assertFalse(config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled());
         assertEquals(List.of("localhost"), config.getNetworkConfig().getJoin().getTcpIpConfig().getMembers());
         assertTrue(config.getNetworkConfig().isPortAutoIncrement());
+        assertTrue(config.getManagementCenterConfig().isScriptingEnabled());
         assertEquals(5701, config.getNetworkConfig().getPort());
         assertEquals(5, config.getMapConfigs().size());
     }

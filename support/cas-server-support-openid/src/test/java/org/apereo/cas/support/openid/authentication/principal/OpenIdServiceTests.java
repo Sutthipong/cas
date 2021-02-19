@@ -5,9 +5,11 @@ import org.apereo.cas.authentication.AuthenticationSystemSupport;
 import org.apereo.cas.authentication.CoreAuthenticationTestUtils;
 import org.apereo.cas.services.DefaultServicesManager;
 import org.apereo.cas.services.ServiceRegistry;
+import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.services.ServicesManagerConfigurationContext;
 import org.apereo.cas.support.openid.AbstractOpenIdTests;
 import org.apereo.cas.support.openid.OpenIdProtocolConstants;
+import org.apereo.cas.util.serialization.JacksonObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -42,7 +44,8 @@ import static org.mockito.Mockito.*;
 public class OpenIdServiceTests extends AbstractOpenIdTests {
     private static final File JSON_FILE = new File(FileUtils.getTempDirectoryPath(), "openIdService.json");
 
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper MAPPER = JacksonObjectMapperFactory.builder()
+        .defaultTypingEnabled(true).build().toObjectMapper();
 
     private static final String OPEN_ID_PREFIX_URL = "http://openid.ja-sig.org/battags";
 
@@ -171,11 +174,11 @@ public class OpenIdServiceTests extends AbstractOpenIdTests {
         val o1 = openIdServiceFactory.createService(request);
         val o2 = openIdServiceFactory.createService(request);
 
-        assertTrue(o1.equals(o2));
-        assertFalse(o1.equals(new Object()));
+        assertEquals(o2, o1);
+        assertNotEquals(new Object(), o1);
     }
 
-    private DefaultServicesManager getServicesManager() {
+    private ServicesManager getServicesManager() {
         val context = ServicesManagerConfigurationContext.builder()
             .serviceRegistry(mock(ServiceRegistry.class))
             .applicationContext(applicationContext)

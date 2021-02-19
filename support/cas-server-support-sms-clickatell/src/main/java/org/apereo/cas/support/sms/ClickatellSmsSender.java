@@ -3,6 +3,7 @@ package org.apereo.cas.support.sms;
 import org.apereo.cas.notifications.sms.SmsSender;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.LoggingUtils;
+import org.apereo.cas.util.serialization.JacksonObjectMapperFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class ClickatellSmsSender implements SmsSender {
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper MAPPER = JacksonObjectMapperFactory.builder()
+        .defaultTypingEnabled(false).build().toObjectMapper();
 
     private final String token;
 
@@ -55,7 +57,7 @@ public class ClickatellSmsSender implements SmsSender {
             val stringify = new StringWriter();
             MAPPER.writeValue(stringify, map);
 
-            val request = new HttpEntity<String>(stringify.toString(), headers);
+            val request = new HttpEntity<>(stringify.toString(), headers);
             val response = restTemplate.postForEntity(new URI(this.serverUrl), request, Map.class);
             if (response.hasBody()) {
                 val body = response.getBody();
@@ -65,7 +67,6 @@ public class ClickatellSmsSender implements SmsSender {
                     LOGGER.error("Response body does not contain any messages");
                     return false;
                 }
-                val messages = (List<Map>) body.get("messages");
 
                 val error = (String) body.get("error");
                 if (StringUtils.isNotBlank(error)) {
@@ -73,6 +74,7 @@ public class ClickatellSmsSender implements SmsSender {
                     return false;
                 }
 
+                val messages = (List<Map>) body.get("messages");
                 val errors = messages.stream()
                     .filter(m -> m.containsKey("accepted") && !Boolean.parseBoolean(m.get("accepted").toString()) && m.containsKey("error"))
                     .map(m -> (String) m.get("error"))

@@ -17,10 +17,10 @@ import org.apereo.cas.persondir.PersonDirectoryAttributeRepositoryPlan;
 import org.apereo.cas.persondir.PersonDirectoryAttributeRepositoryPlanConfigurer;
 import org.apereo.cas.util.CollectionUtils;
 import org.apereo.cas.util.LdapUtils;
-import org.apereo.cas.util.LoggingUtils;
 import org.apereo.cas.util.ResourceUtils;
 import org.apereo.cas.util.function.FunctionUtils;
 import org.apereo.cas.util.io.FileWatcherService;
+import org.apereo.cas.util.spring.boot.ConditionalOnMultiValuedProperty;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +28,7 @@ import lombok.val;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apereo.services.persondir.IPersonAttributeDao;
 import org.apereo.services.persondir.support.AbstractAggregatingDefaultQueryPersonAttributeDao;
 import org.apereo.services.persondir.support.CachingPersonAttributeDaoImpl;
@@ -36,12 +37,14 @@ import org.apereo.services.persondir.support.GroovyPersonAttributeDao;
 import org.apereo.services.persondir.support.GrouperPersonAttributeDao;
 import org.apereo.services.persondir.support.JsonBackedComplexStubPersonAttributeDao;
 import org.apereo.services.persondir.support.MergingPersonAttributeDaoImpl;
+import org.apereo.services.persondir.support.QueryType;
 import org.apereo.services.persondir.support.RestfulPersonAttributeDao;
 import org.apereo.services.persondir.support.ScriptEnginePersonAttributeDao;
 import org.apereo.services.persondir.support.jdbc.AbstractJdbcPersonAttributeDao;
 import org.apereo.services.persondir.support.jdbc.MultiRowJdbcPersonAttributeDao;
 import org.apereo.services.persondir.support.jdbc.SingleRowJdbcPersonAttributeDao;
 import org.apereo.services.persondir.support.ldap.LdaptivePersonAttributeDao;
+import org.apereo.services.persondir.util.CaseCanonicalizationMode;
 import org.jooq.lambda.Unchecked;
 import org.ldaptive.handler.LdapEntryHandler;
 import org.ldaptive.handler.SearchResultHandler;
@@ -120,7 +123,7 @@ public class CasPersonDirectoryConfiguration {
     @Bean
     @RefreshScope
     public AttributeDefinitionStore attributeDefinitionStore() throws Exception {
-        val resource = casProperties.getPersonDirectory().getAttributeDefinitionStore().getJson().getLocation();
+        val resource = casProperties.getAuthn().getAttributeRepository().getAttributeDefinitionStore().getJson().getLocation();
         val store = new DefaultAttributeDefinitionStore(resource);
         store.setScope(casProperties.getServer().getScope());
         return store;
@@ -168,7 +171,7 @@ public class CasPersonDirectoryConfiguration {
     @ConditionalOnMissingBean(name = "cachingAttributeRepository")
     @RefreshScope
     public IPersonAttributeDao cachingAttributeRepository() {
-        val props = casProperties.getAuthn().getAttributeRepository();
+        val props = casProperties.getAuthn().getAttributeRepository().getCore();
         if (props.getExpirationTime() <= 0) {
             LOGGER.warn("Attribute repository caching is disabled");
             return aggregatingAttributeRepository();
@@ -176,13 +179,13 @@ public class CasPersonDirectoryConfiguration {
 
         val impl = new CachingPersonAttributeDaoImpl();
         impl.setCacheNullResults(false);
-        val graphs = Caffeine.newBuilder()
+        val userinfoCache = Caffeine.newBuilder()
             .maximumSize(props.getMaximumCacheSize())
             .expireAfterWrite(props.getExpirationTime(), TimeUnit.valueOf(props.getExpirationTimeUnit().toUpperCase()))
             .build();
-        impl.setUserInfoCache((Map) graphs.asMap());
+        impl.setUserInfoCache((Map) userinfoCache.asMap());
         impl.setCachedPersonAttributesDao(aggregatingAttributeRepository());
-        LOGGER.trace("Configured cache expiration policy for merging attribute sources to be [{}] minute(s)", props.getExpirationTime());
+        LOGGER.trace("Configured cache expiration policy for attribute sources to be [{}] minute(s)", props.getExpirationTime());
         return impl;
     }
 
@@ -193,13 +196,14 @@ public class CasPersonDirectoryConfiguration {
         val aggregate = getAggregateAttributeRepository();
 
         val properties = casProperties.getAuthn().getAttributeRepository();
-        val merger = StringUtils.defaultIfBlank(properties.getMerger(), "replace").trim();
-        LOGGER.trace("Configured merging strategy for attribute sources is [{}]", merger);
-        aggregate.setMerger(CoreAuthenticationUtils.getAttributeMerger(merger));
+        val attributeMerger = CoreAuthenticationUtils.getAttributeMerger(properties.getCore().getMerger());
+        LOGGER.trace("Configured merging strategy for attribute sources is [{}]", attributeMerger);
+        aggregate.setMerger(attributeMerger);
 
         val list = personDirectoryAttributeRepositoryPlan().getAttributeRepositories();
         aggregate.setPersonAttributeDaos(list);
 
+        aggregate.setRequireAll(properties.getCore().isRequireAllRepositorySources());
         if (list.isEmpty()) {
             LOGGER.debug("No attribute repository sources are available/defined to merge together.");
         } else {
@@ -214,23 +218,37 @@ public class CasPersonDirectoryConfiguration {
 
     private AbstractAggregatingDefaultQueryPersonAttributeDao getAggregateAttributeRepository() {
         val properties = casProperties.getAuthn().getAttributeRepository();
-        val aggregation = StringUtils.defaultIfBlank(properties.getAggregation(), "merge").trim().toLowerCase();
-        switch (aggregation) {
-            case "cascade":
-            case "query":
+        switch (properties.getCore().getAggregation()) {
+            case CASCADE:
                 val dao = new CascadingPersonAttributeDao();
                 dao.setAddOriginalAttributesToQuery(true);
                 dao.setStopIfFirstDaoReturnsNull(true);
                 return dao;
-            case "merge":
-            case "combine":
+            case MERGE:
             default:
                 return new MergingPersonAttributeDaoImpl();
         }
     }
 
+    private static AbstractJdbcPersonAttributeDao configureJdbcPersonAttributeDao(
+        final AbstractJdbcPersonAttributeDao dao, final JdbcPrincipalAttributesProperties jdbc) {
+
+        val attributes = jdbc.getCaseInsensitiveQueryAttributes();
+        val results = CollectionUtils.convertDirectedListToMap(attributes);
+
+        dao.setCaseInsensitiveQueryAttributes(results
+            .entrySet()
+            .stream()
+            .map(entry -> Pair.of(entry.getKey(),
+                StringUtils.isBlank(entry.getValue())
+                    ? CaseCanonicalizationMode.valueOf(jdbc.getCaseCanonicalization().toUpperCase())
+                    : CaseCanonicalizationMode.valueOf(entry.getValue().toUpperCase())))
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue)));
+        return dao;
+    }
+
     @ConditionalOnClass(value = JpaBeans.class)
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.jdbc[0].sql")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.jdbc[0]", value = "sql")
     @Configuration("CasPersonDirectoryJdbcConfiguration")
     public class CasPersonDirectoryJdbcConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
 
@@ -254,9 +272,11 @@ public class CasPersonDirectoryConfiguration {
                         jdbcDao.setResultAttributeMapping(mapping);
                     }
                     jdbcDao.setRequireAllQueryAttributes(jdbc.isRequireAllAttributes());
-                    jdbcDao.setUsernameCaseCanonicalizationMode(jdbc.getCaseCanonicalization());
-                    jdbcDao.setDefaultCaseCanonicalizationMode(jdbc.getCaseCanonicalization());
-                    jdbcDao.setQueryType(jdbc.getQueryType());
+
+                    val caseMode = CaseCanonicalizationMode.valueOf(jdbc.getCaseCanonicalization().toUpperCase());
+                    jdbcDao.setUsernameCaseCanonicalizationMode(caseMode);
+                    jdbcDao.setDefaultCaseCanonicalizationMode(caseMode);
+                    jdbcDao.setQueryType(QueryType.valueOf(jdbc.getQueryType().toUpperCase()));
                     jdbcDao.setOrder(jdbc.getOrder());
                     list.add(jdbcDao);
                 });
@@ -271,10 +291,11 @@ public class CasPersonDirectoryConfiguration {
         private AbstractJdbcPersonAttributeDao createJdbcPersonAttributeDao(final JdbcPrincipalAttributesProperties jdbc) {
             if (jdbc.isSingleRow()) {
                 LOGGER.debug("Configured single-row JDBC attribute repository for [{}]", jdbc.getUrl());
-                return new SingleRowJdbcPersonAttributeDao(
-                    JpaBeans.newDataSource(jdbc),
-                    jdbc.getSql()
-                );
+                return configureJdbcPersonAttributeDao(
+                    new SingleRowJdbcPersonAttributeDao(
+                        JpaBeans.newDataSource(jdbc),
+                        jdbc.getSql()
+                    ), jdbc);
             }
             LOGGER.debug("Configured multi-row JDBC attribute repository for [{}]", jdbc.getUrl());
             val jdbcDao = new MultiRowJdbcPersonAttributeDao(
@@ -283,11 +304,11 @@ public class CasPersonDirectoryConfiguration {
             );
             LOGGER.debug("Configured multi-row JDBC column mappings for [{}] are [{}]", jdbc.getUrl(), jdbc.getColumnMappings());
             jdbcDao.setNameValueColumnMappings(jdbc.getColumnMappings());
-            return jdbcDao;
+            return configureJdbcPersonAttributeDao(jdbcDao, jdbc);
         }
     }
 
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.ldap[0].ldap-url")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.ldap[0]", value = "ldap-url")
     @Configuration("CasPersonDirectoryLdapConfiguration")
     public class CasPersonDirectoryLdapConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
 
@@ -330,12 +351,12 @@ public class CasPersonDirectoryConfiguration {
                     val searchEntryHandlers = ldap.getSearchEntryHandlers();
                     if (searchEntryHandlers != null && !searchEntryHandlers.isEmpty()) {
                         val entryHandlers = LdapUtils.newLdaptiveEntryHandlers(searchEntryHandlers);
-                        if (entryHandlers != null && !entryHandlers.isEmpty()) {
+                        if (!entryHandlers.isEmpty()) {
                             LOGGER.debug("Setting entry handlers [{}]", entryHandlers);
                             ldapDao.setEntryHandlers(entryHandlers.toArray(new LdapEntryHandler[0]));
                         }
                         val searchResultHandlers = LdapUtils.newLdaptiveSearchResultHandlers(searchEntryHandlers);
-                        if (searchResultHandlers != null && !searchResultHandlers.isEmpty()) {
+                        if (!searchResultHandlers.isEmpty()) {
                             LOGGER.debug("Setting search result handlers [{}]", searchResultHandlers);
                             ldapDao.setSearchResultHandlers(searchResultHandlers.toArray(new SearchResultHandler[0]));
                         }
@@ -361,7 +382,7 @@ public class CasPersonDirectoryConfiguration {
         }
     }
 
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.rest[0].url")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.rest[0]", value = "url")
     @Configuration("CasPersonDirectoryRestConfiguration")
     public class CasPersonDirectoryRestConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
         @ConditionalOnMissingBean(name = "restfulAttributeRepositories")
@@ -401,7 +422,7 @@ public class CasPersonDirectoryConfiguration {
         }
     }
 
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.groovy[0].location")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.groovy[0]", value = "location")
     @Configuration("CasPersonDirectoryGroovyConfiguration")
     public class CasPersonDirectoryGroovyConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
 
@@ -430,7 +451,7 @@ public class CasPersonDirectoryConfiguration {
         }
     }
 
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.script[0].location")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.script[0]", value = "location")
     @Configuration("CasPersonDirectoryScriptedConfiguration")
     @Deprecated(since = "6.2.0")
     public class CasPersonDirectoryScriptedConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
@@ -462,7 +483,7 @@ public class CasPersonDirectoryConfiguration {
         }
     }
 
-    @ConditionalOnProperty(name = "cas.authn.attribute-repository.json[0].location")
+    @ConditionalOnMultiValuedProperty(name = "cas.authn.attribute-repository.json[0]", value = "location")
     @Configuration("CasPersonDirectoryRestConfiguration")
     public class CasPersonDirectoryJsonConfiguration implements PersonDirectoryAttributeRepositoryPlanConfigurer {
 
@@ -477,20 +498,10 @@ public class CasPersonDirectoryConfiguration {
                 .forEach(Unchecked.consumer(json -> {
                     val r = json.getLocation();
                     val dao = new JsonBackedComplexStubPersonAttributeDao(r);
-                    try {
-                        if (r.isFile()) {
-                            val watcherService = new FileWatcherService(r.getFile(), file -> {
-                                try {
-                                    dao.init();
-                                } catch (final Exception e) {
-                                    LoggingUtils.error(LOGGER, e);
-                                }
-                            });
-                            watcherService.start(getClass().getSimpleName());
-                            dao.setResourceWatcherService(watcherService);
-                        }
-                    } catch (final Exception e) {
-                        LOGGER.debug(e.getMessage(), e);
+                    if (ResourceUtils.isFile(r)) {
+                        val watcherService = new FileWatcherService(r.getFile(), Unchecked.consumer(file -> dao.init()));
+                        watcherService.start(getClass().getSimpleName());
+                        dao.setResourceWatcherService(watcherService);
                     }
                     dao.setOrder(json.getOrder());
                     FunctionUtils.doIfNotNull(json.getId(), dao::setId);

@@ -12,19 +12,18 @@ import org.apereo.cas.otp.repository.token.CachingOneTimeTokenRepository;
 import org.apereo.cas.otp.repository.token.OneTimeTokenRepository;
 import org.apereo.cas.otp.web.flow.OneTimeTokenAuthenticationWebflowAction;
 import org.apereo.cas.otp.web.flow.OneTimeTokenAuthenticationWebflowEventResolver;
-import org.apereo.cas.otp.web.flow.rest.OneTimeTokenQRGeneratorController;
 import org.apereo.cas.services.ServicesManager;
 import org.apereo.cas.ticket.registry.TicketRegistry;
 import org.apereo.cas.ticket.registry.TicketRegistrySupport;
 import org.apereo.cas.web.cookie.CasCookieBuilder;
+import org.apereo.cas.web.flow.CasWebflowConstants;
 import org.apereo.cas.web.flow.SingleSignOnParticipationStrategy;
 import org.apereo.cas.web.flow.resolver.CasDelegatingWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.CasWebflowEventResolver;
 import org.apereo.cas.web.flow.resolver.impl.CasWebflowEventResolutionConfigurationContext;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,6 @@ import java.util.Collection;
 @Configuration("oneTimeTokenAuthenticationConfiguration")
 @EnableConfigurationProperties(CasConfigurationProperties.class)
 @EnableScheduling
-@Slf4j
 public class OneTimeTokenAuthenticationConfiguration {
     private static final int EXPIRE_TOKENS_IN_SECONDS = 30;
 
@@ -69,7 +67,7 @@ public class OneTimeTokenAuthenticationConfiguration {
     @Autowired
     @Qualifier("authenticationContextValidator")
     private ObjectProvider<MultifactorAuthenticationContextValidator> authenticationContextValidator;
-    
+
     @Autowired
     @Qualifier("defaultTicketRegistrySupport")
     private ObjectProvider<TicketRegistrySupport> ticketRegistrySupport;
@@ -107,7 +105,7 @@ public class OneTimeTokenAuthenticationConfiguration {
     @Autowired
     @Qualifier("authenticationEventExecutionPlan")
     private ObjectProvider<AuthenticationEventExecutionPlan> authenticationEventExecutionPlan;
-    
+
     @Autowired
     @Qualifier("initialAuthenticationAttemptWebflowEventResolver")
     private ObjectProvider<CasDelegatingWebflowEventResolver> initialAuthenticationAttemptWebflowEventResolver;
@@ -137,27 +135,21 @@ public class OneTimeTokenAuthenticationConfiguration {
 
     @Bean
     @RefreshScope
+    @ConditionalOnMissingBean(name = CasWebflowConstants.ACTION_ID_OTP_AUTHENTICATION_ACTION)
     public Action oneTimeTokenAuthenticationWebflowAction() {
         return new OneTimeTokenAuthenticationWebflowAction(oneTimeTokenAuthenticationWebflowEventResolver());
     }
-
-    @Bean
-    public OneTimeTokenQRGeneratorController oneTimeTokenQRGeneratorController() {
-        return new OneTimeTokenQRGeneratorController();
-    }
-
+    
     @ConditionalOnMissingBean(name = "oneTimeTokenAuthenticatorTokenRepository")
     @Bean
+    @RefreshScope
     public OneTimeTokenRepository oneTimeTokenAuthenticatorTokenRepository() {
-        final LoadingCache<String, Collection<OneTimeToken>> storage = Caffeine.newBuilder()
+        final Cache<String, Collection<OneTimeToken>> storage = Caffeine.newBuilder()
             .initialCapacity(INITIAL_CACHE_SIZE)
             .maximumSize(MAX_CACHE_SIZE)
             .recordStats()
             .expireAfterWrite(Duration.ofSeconds(EXPIRE_TOKENS_IN_SECONDS))
-            .build(s -> {
-                LOGGER.error("Load operation of the cache is not supported.");
-                return null;
-            });
+            .build();
         return new CachingOneTimeTokenRepository(storage);
     }
 }

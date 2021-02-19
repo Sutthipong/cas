@@ -48,6 +48,8 @@ import javax.persistence.Table;
 @Entity(name = "SamlIdPMetadataDocument")
 @Table(name = "SamlIdPMetadataDocument")
 public class PostgresSamlIdPMetadataDocument extends SamlIdPMetadataDocument {
+    private static final long serialVersionUID = 2576062504192441866L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
     @GenericGenerator(name = "native", strategy = "native")
